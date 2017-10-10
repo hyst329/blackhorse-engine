@@ -1,0 +1,4 @@
+# CMake build dir
+build
+# Visual Studio Code properties
+.vscode
