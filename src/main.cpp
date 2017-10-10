@@ -21,7 +21,7 @@ int perft_test(Board& board, int depth, bool divide_out = true)
         int pt = perft_test(board, depth - 1, false);
         if (divide_out)
         {
-            //cout << board << endl;
+            cout << board << endl;
             cout << m << " " << pt << endl;
         }
         nodes += pt;
@@ -78,21 +78,27 @@ int main()
     // for (Move move : moves)
     //     cout << move << " ";
     // cout << endl;
-    // board.make_move(Move(E2, E4));
-    // board.make_move(Move(C7, C5));
-    // board.make_move(Move(H2, H4));
-    // board.make_move(Move(F7, F5)); 
+    board.make_move(Move(E2, E4));
+    //board.make_move(Move(C7, C5));
+    //board.make_move(Move(E4, E5));
+    //board.make_move(Move(F7, F5));
+	//board.make_move(Move(E5, F6));
     // board.make_move(Move(B1, C3)); 
     // board.make_move(Move(B8, C6)); 
-    // board.unmake_move(); 
-    // board.unmake_move(); 
+	cout << board << endl;
+    //board.unmake_move();
+	//board.unmake_move();
+	//board.unmake_move();
+    //board.unmake_move();
+	//board.unmake_move();
     //vector<Move> moves = MoveGenerator::generate_moves_legal(board);
     //for (Move move : moves)
     //    cout << move << " ";
     //for (int i = 1; i <= 5; i++)
-    cout << perft_test(5) << endl;
+    cout << perft_test(board, 5) << endl;
     // cout << endl << endl;
-    // cout << board.get_hash() << endl;
-    // cout << board.get_fen() << endl;
-        // return 0;
+	cout << board << endl;
+    cout << board.get_hash() << endl;
+    cout << board.get_fen() << endl;
+    return 0;
 }

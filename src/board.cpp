@@ -6,6 +6,7 @@
 #include <array>
 #include <sstream>
 #include <algorithm>
+#include <functional>
 
 uint64_t Board::zobrist_tables[SQUARES_COUNT][TOTAL_PIECES_COUNT]{};
 bool Board::zobrist_initialised = false;
@@ -117,7 +118,14 @@ Board::Board(string fen) : Board()
             set_piece(from_file_rank(file, rank), BLACK * PAWN);
             file++;
             break;
-        case '1' ... '8':
+        case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
             file += (c - '0');
             break;
         case '/':

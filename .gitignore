@@ -2,3 +2,5 @@
 build
 # Visual Studio Code properties
 .vscode
+# Visual Studio properties
+.vs
