@@ -119,13 +119,13 @@ Board::Board(string fen) : Board()
             file++;
             break;
         case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
             file += (c - '0');
             break;
         case '/':
@@ -194,6 +194,7 @@ void Board::make_move(Move move)
         set_piece(rook_square, NONE);
         set_piece(new_rook_square, rook);
         move_history.push(move);
+        (side_to_move == WHITE ? white_castling : black_castling) = NONE;
         side_to_move = -side_to_move;
         move_number += (side_to_move == WHITE);
         halfmove_counter++;
@@ -206,6 +207,27 @@ void Board::make_move(Move move)
         set_piece(move.get_to(), promoted_piece ? promoted_piece : piece);
         move.set_captured_piece(captured_piece);
         move_history.push(move);
+        // remove castling rights
+        if (abs(piece) == KING)
+        {
+            (side_to_move == WHITE ? white_castling : black_castling) = NONE;
+        }
+        if ((abs(piece) == ROOK && move.get_to() == A1) || move.get_from() == A1)
+        {
+            white_castling &= KINGSIDE;
+        }
+        if (abs(piece) == ROOK && move.get_to() == H1 || move.get_from() == H1)
+        {
+            white_castling &= QUEENSIDE;
+        }
+        if ((abs(piece) == ROOK && move.get_to() == A8) || move.get_from() == A8)
+        {
+            black_castling &= KINGSIDE;
+        }
+        if (abs(piece) == ROOK && move.get_to() == H8 || move.get_from() == H8)
+        {
+            black_castling &= QUEENSIDE;
+        }
         side_to_move = -side_to_move;
         move_number += (side_to_move == WHITE);
         if (abs(piece) == PAWN && en_passant)

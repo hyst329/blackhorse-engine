@@ -1,5 +1,6 @@
 #include "eval.h"
 #include <algorithm>
+#include <random>
 
 const int16_t PIECE_VALUES[PIECES_COUNT + 1] = {
     0,   // NONE
@@ -25,10 +26,12 @@ bool helper_compare(Board &board, Move &m1, Move &m2)
 EvaluationResult EvaluationEngine::evaluate_final(Board &board, vector<Move> &variation)
 {
     int16_t res = 0;
+    normal_distribution<double> normal(1, 0.01);
+    mt19937_64 rng = Board::get_rng();
     for (int i = 0; i < SQUARES_COUNT; i++)
     {
         int8_t piece = board.get_piece((Square)i);
-        res += PIECE_VALUES[abs(piece)] * (piece > 0 ? 1 : -1);
+        res += round(PIECE_VALUES[abs(piece)] * (piece > 0 ? 1 : -1) * normal(rng));
     }
     int legal_moves = MoveGenerator::generate_moves_legal(board).size();
     board.switch_sides();
