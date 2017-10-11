@@ -3,6 +3,7 @@
 #include "board.h"
 #include "move.h"
 #include "eval.h"
+#include "uci.h"
 
 int perft_test(Board& board, int depth, bool divide_out = true)
 {
@@ -39,15 +40,17 @@ int perft_test(int depth)
 
 int main()
 {
-    Board board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-    vector<Move> variation;
-    EvaluationResult er = EvaluationEngine::evaluate(board, 14, variation);
-    cout << "Eval score: " << er.score << endl;
-    cout << er.variation.size() << endl;
-    for (Move& m: er.variation)
-    {
-        cout << m << " ";
-    }
-    cout << endl;
+    // Board board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    // vector<Move> variation;
+    // EvaluationResult er = EvaluationEngine::evaluate(board, 14, variation);
+    // cout << "Eval score: " << er.score << endl;
+    // cout << er.variation.size() << endl;
+    // for (Move& m: er.variation)
+    // {
+    //     cout << m << " ";
+    // }
+    // cout << endl;
+    UCI uci(cin, cout);
+    uci.main_loop();
     return 0;
 }

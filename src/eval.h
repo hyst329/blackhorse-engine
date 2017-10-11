@@ -1,3 +1,6 @@
+#ifndef EVAL_H
+#define EVAL_H
+
 #include "board.h"
 
 struct EvaluationResult
@@ -19,3 +22,5 @@ private:
     static EvaluationResult evaluate_depth(Board &board, int depth, int16_t& alpha, int16_t& beta, vector<Move> &variation);
     static EvaluationResult evaluate_quiesce(Board &board, int16_t& alpha, int16_t& beta, vector<Move> &variation);
 };
+
+#endif
