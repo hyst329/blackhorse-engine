@@ -117,7 +117,7 @@ void UCI::main_loop()
                 }
                 if (depth == 0)
                 {
-                    depth = 4;
+                    depth = 20;
                 }
                 if (max_time == 0)
                 {
@@ -151,7 +151,8 @@ Move UCI::output_thinking(int max_depth, int max_time)
     for (int i = 1; i <= max_depth; i++)
     {
         vector<Move> variation;
-        EvaluationResult er = EvaluationEngine::evaluate(board, i, variation);
+        Board b = board;
+        EvaluationResult er = EvaluationEngine::evaluate(b, i, variation);
         output << "info depth " << i;
         output << " score cp " << er.score * board.get_side_to_move();
         double elapsed_time = (double)(clock() - start) / CLOCKS_PER_SEC * 1000;
