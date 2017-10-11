@@ -2,6 +2,9 @@
 #include "board.h"
 
 #include <iomanip>
+#include <omp.h>
+
+#pragma omp declare reduction(merge : std::vector<Move> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
 
 const uint64_t KING_PATTERNS_TABLE[64] = {
     0x0000000000000302, 0x0000000000000705, 0x0000000000000e0a, 0x0000000000001c14, 0x0000000000003828, 0x0000000000007050, 0x000000000000e0a0, 0x000000000000c040,
@@ -296,6 +299,8 @@ vector<Move> MoveGenerator::generate_moves_pseudo_legal(const Board &board)
 {
     uint64_t pieces = board.combined_bitboard(board.get_side_to_move());
     vector<Move> res;
+//#pragma omp parallel num_threads(8)
+//#pragma omp for nowait reduction(merge : res)
     for (int i = 0; i < SQUARES_COUNT; i++)
     {
         if (pieces & (1ULL << i))

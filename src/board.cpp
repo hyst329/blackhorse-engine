@@ -264,7 +264,7 @@ Move Board::unmake_move()
     }
     else
     {
-        bool en_passant_capture = (piece == PAWN) &&
+        bool en_passant_capture = (piece == -side_to_move * PAWN) &&
                                   (move.get_to() == from_file_rank(en_passant, side_to_move == WHITE ? 3 : 6));
         int8_t promoted_piece = move.get_promoted_piece();
         set_piece(move.get_from(), promoted_piece ? -side_to_move * PAWN : piece);
