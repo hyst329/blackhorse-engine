@@ -299,8 +299,8 @@ vector<Move> MoveGenerator::generate_moves_pseudo_legal(const Board &board)
 {
     uint64_t pieces = board.combined_bitboard(board.get_side_to_move());
     vector<Move> res;
-//#pragma omp parallel num_threads(8)
-//#pragma omp for nowait reduction(merge : res)
+#pragma omp parallel num_threads(8)
+#pragma omp for nowait reduction(merge : res)
     for (int i = 0; i < SQUARES_COUNT; i++)
     {
         if (pieces & (1ULL << i))

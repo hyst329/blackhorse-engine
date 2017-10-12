@@ -12,7 +12,7 @@ const int16_t PIECE_VALUES[PIECES_COUNT + 1] = {
     400, // KING
 };
 
-const int16_t MOBILITY_FACTOR = 10;
+const int16_t MOBILITY_FACTOR = 5;
 
 bool helper_compare(Board &board, Move &m1, Move &m2)
 {
@@ -41,11 +41,14 @@ EvaluationResult EvaluationEngine::evaluate_final(Board &board, vector<Move> &va
     return {res, variation};
 }
 
-EvaluationResult EvaluationEngine::evaluate_depth(Board &board, int depth, int16_t &alpha, int16_t &beta, vector<Move> &variation)
+EvaluationResult EvaluationEngine::evaluate_depth(Board &board, int depth, int16_t &alpha, int16_t &beta, vector<Move> &variation, map<uint64_t, EvaluationResult> &hash_table)
 {
     if (depth == 0)
     {
-        return evaluate_quiesce(board, alpha, beta, variation);
+        //EvaluationResult res = evaluate_quiesce(board, alpha, beta, variation);
+        EvaluationResult res = evaluate_final(board, variation);
+        hash_table[board.get_hash()] = res;
+        return res;
     }
     vector<Move> moves = MoveGenerator::generate_moves_legal(board);
     if (moves.empty())
@@ -53,7 +56,13 @@ EvaluationResult EvaluationEngine::evaluate_depth(Board &board, int depth, int16
         if (MoveGenerator::detect_check(board))
         {
             int16_t checkmate_score = board.get_side_to_move() == WHITE ? MIN_SCORE : MAX_SCORE;
-            return {checkmate_score, variation};
+            hash_table[board.get_hash()] = {checkmate_score, variation};
+            return hash_table[board.get_hash()];
+        }
+        else
+        {
+            hash_table[board.get_hash()] = {0, variation};
+            return hash_table[board.get_hash()];
         }
     }
     sort(moves.begin(), moves.end(), [&board](Move &m1, Move &m2) { return helper_compare(board, m1, m2); });
@@ -63,18 +72,29 @@ EvaluationResult EvaluationEngine::evaluate_depth(Board &board, int depth, int16
         vector<Move> newvar;
         for (Move &m : moves)
         {
+            //cout << depth << m << endl;
+            //cout << alpha << " " << beta << endl;
             newvar = vector<Move>(variation.begin(), variation.end());
             newvar.push_back(m);
             board.make_move(m);
-            EvaluationResult er = evaluate_depth(board, depth - 1, alpha, beta, newvar);
+            EvaluationResult er;
+            if (hash_table.count(board.get_hash()))
+            {
+                er = hash_table[board.get_hash()];
+            }
+            else
+            {
+                er = evaluate_depth(board, depth - 1, alpha, beta, newvar, hash_table);
+                hash_table[board.get_hash()] = er;
+            }
             newvar = er.variation;
             v = max(v, er.score);
             alpha = max(alpha, v);
             board.unmake_move();
-            if (beta < alpha)
-            {
-                break;
-            }
+            // if (beta <= v)
+            // {
+            //     break;
+            // }
         }
         return {v, newvar};
     }
@@ -84,18 +104,29 @@ EvaluationResult EvaluationEngine::evaluate_depth(Board &board, int depth, int16
         vector<Move> newvar;
         for (Move &m : moves)
         {
+            //cout << depth << m << endl;
+            //cout << alpha << " " << beta << endl;
             newvar = vector<Move>(variation.begin(), variation.end());
             newvar.push_back(m);
             board.make_move(m);
-            EvaluationResult er = evaluate_depth(board, depth - 1, alpha, beta, newvar);
+            EvaluationResult er;
+            if (hash_table.count(board.get_hash()))
+            {
+                er = hash_table[board.get_hash()];
+            }
+            else
+            {
+                er = evaluate_depth(board, depth - 1, alpha, beta, newvar, hash_table);
+                hash_table[board.get_hash()] = er;
+            }
             newvar = er.variation;
             v = min(v, er.score);
             beta = min(beta, v);
             board.unmake_move();
-            if (beta < alpha)
-            {
-                break;
-            }
+            // if (v <= alpha)
+            // {
+            //     break;
+            // }
         }
         return {v, newvar};
     }
@@ -103,6 +134,36 @@ EvaluationResult EvaluationEngine::evaluate_depth(Board &board, int depth, int16
 
 EvaluationResult EvaluationEngine::evaluate_quiesce(Board &board, int16_t &alpha, int16_t &beta, vector<Move> &variation)
 {
-    // placeholder, no quiesce yet
-    return evaluate_final(board, variation);
+    EvaluationResult er = evaluate_final(board, variation);
+    if (er.score >= beta)
+    {
+        return er;
+    }
+    if (alpha < er.score)
+    {
+        alpha = er.score;
+    }
+    vector<Move> legal_moves = MoveGenerator::generate_moves_legal(board);
+    for (Move &m : legal_moves)
+    {
+        if (m.get_captured_piece())
+        {
+            vector<Move> newvar = vector<Move>(variation.begin(), variation.end());
+            newvar.push_back(m);
+            board.make_move(m);
+            EvaluationResult ner = evaluate_quiesce(board, alpha, beta, newvar);
+            board.unmake_move();
+            if (ner.score >= beta)
+            {
+                er.score = beta;
+                return er;
+            }
+            if (ner.score > alpha)
+            {
+                alpha = ner.score;
+            }
+        }
+    }
+    er.score = alpha;
+    return er;
 }

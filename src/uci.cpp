@@ -128,13 +128,14 @@ void UCI::main_loop()
                     max_time = 180000;
                 }
                 output << "depth " << depth << " max_time " << max_time << endl;
-                future<Move> f = async([this, depth, max_time]() { return output_thinking(depth, max_time); });
-                Move bestmove = f.get();
-                output << "bestmove " << bestmove << endl;
+                thinking.store(true);
+                thread t([this, depth, max_time]() { return output_thinking(depth, max_time); });
+                t.detach();
             }
             if (command == "stop")
             {
                 // TODO: Stop thinking
+                thinking.store(false);
             }
             if (command == "print")
             {
@@ -144,30 +145,38 @@ void UCI::main_loop()
     }
 }
 
-Move UCI::output_thinking(int max_depth, int max_time)
+void UCI::output_thinking(int max_depth, int max_time)
 {
     clock_t start = clock();
     Move bestmove(INVALID, INVALID);
+    double elapsed_time = 0;
     for (int i = 1; i <= max_depth; i++)
     {
+        double old_elapsed = elapsed_time;
         vector<Move> variation;
+        map<uint64_t, EvaluationResult> hash_table;
         Board b = board;
-        EvaluationResult er = EvaluationEngine::evaluate(b, i, variation);
+        EvaluationResult er = EvaluationEngine::evaluate(b, i, variation, hash_table);
         output << "info depth " << i;
         output << " score cp " << er.score * board.get_side_to_move();
-        double elapsed_time = (double)(clock() - start) / CLOCKS_PER_SEC * 1000;
+        elapsed_time = (double)(clock() - start) / CLOCKS_PER_SEC * 1000;
+        int nodes = hash_table.size();
+        int nps = round(nodes * 1000.0 / (elapsed_time - old_elapsed));
         output << " time " << (int)elapsed_time;
+        output << " nodes " << nodes;
+        output << " nps " << nps;
         output << " pv";
-        for (Move& m : er.variation)
+        for (Move &m : er.variation)
         {
             output << " " << m;
         }
         output << endl;
         bestmove = er.variation[0];
-        if (elapsed_time  > max_time)
+        if (elapsed_time > max_time || !thinking.load())
         {
-            return bestmove;
+            output << "bestmove " << bestmove << endl;
+            return;
         }
     }
-    return bestmove;
+    output << "bestmove " << bestmove << endl;
 }
