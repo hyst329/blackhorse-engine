@@ -33,15 +33,15 @@ EvaluationResult EvaluationEngine::evaluate_final(Board &board, vector<Move> &va
         int8_t piece = board.get_piece((Square)i);
         res += round(PIECE_VALUES[abs(piece)] * (piece > 0 ? 1 : -1) * normal(rng));
     }
-    int legal_moves = MoveGenerator::generate_moves_legal(board).size();
-    board.switch_sides();
-    int opponent_legal_moves = MoveGenerator::generate_moves_legal(board).size();
-    board.switch_sides();
-    res += MOBILITY_FACTOR * (legal_moves - opponent_legal_moves);
+    // int legal_moves = MoveGenerator::generate_moves_legal(board).size();
+    // board.switch_sides();
+    // int opponent_legal_moves = MoveGenerator::generate_moves_legal(board).size();
+    // board.switch_sides();
+    // res += MOBILITY_FACTOR * (legal_moves - opponent_legal_moves);
     return {res, variation};
 }
 
-EvaluationResult EvaluationEngine::evaluate_depth(Board &board, int depth, int16_t &alpha, int16_t &beta, vector<Move> &variation, map<uint64_t, EvaluationResult> &hash_table)
+EvaluationResult EvaluationEngine::evaluate_depth(Board &board, int depth, int16_t alpha, int16_t beta, vector<Move> &variation, map<uint64_t, EvaluationResult> &hash_table)
 {
     if (depth == 0)
     {
@@ -91,10 +91,10 @@ EvaluationResult EvaluationEngine::evaluate_depth(Board &board, int depth, int16
             v = max(v, er.score);
             alpha = max(alpha, v);
             board.unmake_move();
-            // if (beta <= v)
-            // {
-            //     break;
-            // }
+            if (beta <= v)
+            {
+                break;
+            }
         }
         return {v, newvar};
     }
@@ -123,16 +123,16 @@ EvaluationResult EvaluationEngine::evaluate_depth(Board &board, int depth, int16
             v = min(v, er.score);
             beta = min(beta, v);
             board.unmake_move();
-            // if (v <= alpha)
-            // {
-            //     break;
-            // }
+            if (v <= alpha)
+            {
+                break;
+            }
         }
         return {v, newvar};
     }
 }
 
-EvaluationResult EvaluationEngine::evaluate_quiesce(Board &board, int16_t &alpha, int16_t &beta, vector<Move> &variation)
+EvaluationResult EvaluationEngine::evaluate_quiesce(Board &board, int16_t alpha, int16_t beta, vector<Move> &variation)
 {
     EvaluationResult er = evaluate_final(board, variation);
     if (er.score >= beta)
