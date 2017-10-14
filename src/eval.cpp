@@ -14,6 +14,96 @@ const int16_t PIECE_VALUES[PIECES_COUNT + 1] = {
 
 const int16_t MOBILITY_FACTOR = 5;
 
+const int16_t NONE_EVAL_TABLE[SQUARES_COUNT] = {};
+
+const int16_t PAWN_EVAL_TABLE[SQUARES_COUNT] = {
+        0, 5, 5, 0, 5, 10, 50, 0,
+        0, 10, -5, 0, 5, 10, 50, 0,
+        0, 10, -10, 0, 10, 20, 50, 0,
+        0, -20, 0, 20, 25, 30, 50, 0,
+        0, -20, 0, 20, 25, 30, 50, 0,
+        0, 10, -10, 0, 10, 20, 50, 0,
+        0, 10, -5, 0, 5, 10, 50, 0,
+        0, 5, 5, 0, 5, 10, 50, 0,
+};
+
+const int16_t KNIGHT_EVAL_TABLE[SQUARES_COUNT] = {
+    -50, -40, -30, -30, -30, -30, -40, -50,
+    -40, -20, 5, 0, 5, 0, -20, -40,
+    -30, 0, 10, 15, 15, 10, 0, -30,
+    -30, 5, 15, 20, 20, 15, 0, -30,
+    -30, 5, 15, 20, 20, 15, 0, -30,
+    -30, 0, 10, 15, 15, 10, 0, -30,
+    -40, -20, 5, 0, 5, 0, -20, -40,
+    -50, -40, -30, -30, -30, -30, -40, -50,
+};
+
+const int16_t BISHOP_EVAL_TABLE[SQUARES_COUNT] = {
+    -20, -10, -10, -10, -10, -10, -10, -20,
+    -10, 5, 10, 0, 5, 0, 0, -10,
+    -10, 0, 10, 10, 5, 5, 0, -10,
+    -10, 0, 10, 10, 10, 10, 0, -10,
+    -10, 0, 10, 10, 10, 10, 0, -10,
+    -10, 0, 10, 10, 5, 5, 0, -10,
+    -10, 5, 10, 0, 5, 0, 0, -10,
+    -20, -10, -10, -10, -10, -10, -10, -20,
+};
+
+const int16_t ROOK_EVAL_TABLE[SQUARES_COUNT] = {
+    0, -5, -5, -5, -5, -5, 5, 0,
+    0, 0, 0, 0, 0, 0, 10, 0,
+    0, 0, 0, 0, 0, 0, 10, 0,
+    5, 0, 0, 0, 0, 0, 10, 0,
+    5, 0, 0, 0, 0, 0, 10, 0,
+    0, 0, 0, 0, 0, 0, 10, 0,
+    0, 0, 0, 0, 0, 0, 10, 0,
+    0, -5, -5, -5, -5, -5, 5, 0,
+};
+
+const int16_t QUEEN_EVAL_TABLE[SQUARES_COUNT] = {
+    -20, -10, -10, 0, -5, -10, -10, -20,
+    -10, 0, 5, 0, 0, 0, 0, -10,
+    -10, 5, 5, 5, 5, 5, 0, -10,
+    -5, 0, 5, 5, 5, 5, 0, -5,
+    -5, 0, 5, 5, 5, 5, 0, -5,
+    -10, 0, 5, 5, 5, 5, 0, -10,
+    -10, 0, 0, 0, 0, 0, 0, -10,
+    -20, -10, -10, -5, -5, -10, -10, -20,
+};
+
+const int16_t KING1_EVAL_TABLE[SQUARES_COUNT] = {
+    20, 20, -10, -20, -30, -30, -30, -30,
+    30, 20, -20, -30, -40, -40, -40, -40,
+    10, 0, -20, -30, -40, -40, -40, -40,
+    0, 0, -20, -40, -50, -50, -50, -50,
+    0, 0, -20, -40, -50, -50, -50, -50,
+    10, 0, -20, -30, -40, -40, -40, -40,
+    30, 20, -20, -30, -40, -40, -40, -40,
+    20, 20, -10, -20, -30, -30, -30, -30,
+};
+
+const int16_t KING2_EVAL_TABLE[SQUARES_COUNT] = {
+    -50, -30, -30, -30, -30, -30, -30, -50,
+    -30, -30, -10, -10, -10, -10, -20, -40,
+    -30, 0, 20, 30, 30, 20, -10, -30,
+    -30, 0, 30, 40, 40, 30, 0, -20,
+    -30, 0, 30, 40, 40, 30, 0, -20,
+    -30, 0, 20, 30, 30, 20, -10, -30,
+    -30, -30, -10, -10, -10, -10, -20, -40,
+    -50, -30, -30, -30, -30, -30, -30, -50,
+};
+
+// TODO : Make use of KING2
+const int16_t *EVAL_TABLES[PIECES_COUNT + 1] = {
+    NONE_EVAL_TABLE,
+    PAWN_EVAL_TABLE,
+    KNIGHT_EVAL_TABLE,
+    BISHOP_EVAL_TABLE,
+    ROOK_EVAL_TABLE,
+    QUEEN_EVAL_TABLE,
+    KING1_EVAL_TABLE,
+};
+
 bool helper_compare(Board &board, Move &m1, Move &m2)
 {
     int16_t captured1_piece_value = PIECE_VALUES[abs(m1.get_captured_piece())];
@@ -31,7 +121,7 @@ EvaluationResult EvaluationEngine::evaluate_final(Board &board, vector<Move> &va
     for (int i = 0; i < SQUARES_COUNT; i++)
     {
         int8_t piece = board.get_piece((Square)i);
-        res += round(PIECE_VALUES[abs(piece)] * (piece > 0 ? 1 : -1) * normal(rng));
+        res += round((PIECE_VALUES[abs(piece)] + EVAL_TABLES[abs(piece)][i]) * (piece > 0 ? 1 : -1) * normal(rng));
     }
     // int legal_moves = MoveGenerator::generate_moves_legal(board).size();
     // board.switch_sides();
