@@ -17,14 +17,14 @@ const int16_t MOBILITY_FACTOR = 5;
 const int16_t NONE_EVAL_TABLE[SQUARES_COUNT] = {};
 
 const int16_t PAWN_EVAL_TABLE[SQUARES_COUNT] = {
-        0, 5, 5, 0, 5, 10, 50, 0,
-        0, 10, -5, 0, 5, 10, 50, 0,
-        0, 10, -10, 0, 10, 20, 50, 0,
-        0, -20, 0, 20, 25, 30, 50, 0,
-        0, -20, 0, 20, 25, 30, 50, 0,
-        0, 10, -10, 0, 10, 20, 50, 0,
-        0, 10, -5, 0, 5, 10, 50, 0,
-        0, 5, 5, 0, 5, 10, 50, 0,
+    0, 5, 5, 0, 5, 10, 50, 0,
+    0, 10, -5, 0, 5, 10, 50, 0,
+    0, 10, -10, 0, 10, 20, 50, 0,
+    0, -20, 0, 20, 25, 30, 50, 0,
+    0, -20, 0, 20, 25, 30, 50, 0,
+    0, 10, -10, 0, 10, 20, 50, 0,
+    0, 10, -5, 0, 5, 10, 50, 0,
+    0, 5, 5, 0, 5, 10, 50, 0,
 };
 
 const int16_t KNIGHT_EVAL_TABLE[SQUARES_COUNT] = {
@@ -121,7 +121,7 @@ EvaluationResult EvaluationEngine::evaluate_final(Board &board, vector<Move> &va
     for (int i = 0; i < SQUARES_COUNT; i++)
     {
         int8_t piece = board.get_piece((Square)i);
-        res += round((PIECE_VALUES[abs(piece)] + EVAL_TABLES[abs(piece)][i]) * (piece > 0 ? 1 : -1) * normal(rng));
+        res += round((PIECE_VALUES[abs(piece)] + EVAL_TABLES[abs(piece)][piece > 0 ? i : (i & 56 | (7 - i & 7))]) * (piece > 0 ? 1 : -1) * normal(rng));
     }
     // int legal_moves = MoveGenerator::generate_moves_legal(board).size();
     // board.switch_sides();
@@ -131,7 +131,7 @@ EvaluationResult EvaluationEngine::evaluate_final(Board &board, vector<Move> &va
     return {res, variation};
 }
 
-EvaluationResult EvaluationEngine::evaluate_depth(Board &board, int depth, int16_t alpha, int16_t beta, vector<Move> &variation, map<uint64_t, EvaluationResult> &hash_table)
+EvaluationResult EvaluationEngine::evaluate_depth(Board &board, int depth, int16_t alpha, int16_t beta, vector<Move> &variation, vector<Move> movelist, map<uint64_t, EvaluationResult> &hash_table)
 {
     if (depth == 0)
     {
@@ -140,7 +140,11 @@ EvaluationResult EvaluationEngine::evaluate_depth(Board &board, int depth, int16
         hash_table[board.get_hash()] = res;
         return res;
     }
-    vector<Move> moves = MoveGenerator::generate_moves_legal(board);
+    vector<Move> moves = movelist;
+    if (moves.empty())
+    {
+        moves = MoveGenerator::generate_moves_legal(board);
+    }
     if (moves.empty())
     {
         if (MoveGenerator::detect_check(board))
@@ -155,12 +159,12 @@ EvaluationResult EvaluationEngine::evaluate_depth(Board &board, int depth, int16
             return hash_table[board.get_hash()];
         }
     }
-    sort(moves.begin(), moves.end(), [&board](Move &m1, Move &m2) { return helper_compare(board, m1, m2); });
+    sort(moves.begin(), moves.end(), [&board](Move m1, Move m2) { return helper_compare(board, m1, m2); });
     if (board.get_side_to_move() == WHITE)
     {
         int16_t v = MIN_SCORE;
         vector<Move> newvar;
-        for (Move &m : moves)
+        for (Move m : moves)
         {
             //cout << depth << m << endl;
             //cout << alpha << " " << beta << endl;
@@ -174,7 +178,7 @@ EvaluationResult EvaluationEngine::evaluate_depth(Board &board, int depth, int16
             }
             else
             {
-                er = evaluate_depth(board, depth - 1, alpha, beta, newvar, hash_table);
+                er = evaluate_depth(board, depth - 1, alpha, beta, newvar, {}, hash_table);
                 hash_table[board.get_hash()] = er;
             }
             newvar = er.variation;
@@ -192,7 +196,7 @@ EvaluationResult EvaluationEngine::evaluate_depth(Board &board, int depth, int16
     {
         int16_t v = MAX_SCORE;
         vector<Move> newvar;
-        for (Move &m : moves)
+        for (Move m : moves)
         {
             //cout << depth << m << endl;
             //cout << alpha << " " << beta << endl;
@@ -206,7 +210,7 @@ EvaluationResult EvaluationEngine::evaluate_depth(Board &board, int depth, int16
             }
             else
             {
-                er = evaluate_depth(board, depth - 1, alpha, beta, newvar, hash_table);
+                er = evaluate_depth(board, depth - 1, alpha, beta, newvar, {}, hash_table);
                 hash_table[board.get_hash()] = er;
             }
             newvar = er.variation;
@@ -234,7 +238,7 @@ EvaluationResult EvaluationEngine::evaluate_quiesce(Board &board, int16_t alpha,
         alpha = er.score;
     }
     vector<Move> legal_moves = MoveGenerator::generate_moves_legal(board);
-    for (Move &m : legal_moves)
+    for (Move m : legal_moves)
     {
         if (m.get_captured_piece())
         {

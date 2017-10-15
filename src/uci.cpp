@@ -156,26 +156,39 @@ void UCI::output_thinking(int max_depth, int max_time)
         vector<Move> variation;
         map<uint64_t, EvaluationResult> hash_table;
         Board b = board;
-        EvaluationResult er = EvaluationEngine::evaluate(b, i, variation, hash_table);
-        output << "info depth " << i;
-        output << " score cp " << er.score * board.get_side_to_move();
-        elapsed_time = (double)(clock() - start) / CLOCKS_PER_SEC * 1000;
-        int nodes = hash_table.size();
-        int nps = round(nodes * 1000.0 / (elapsed_time - old_elapsed));
-        output << " time " << (int)elapsed_time;
-        output << " nodes " << nodes;
-        output << " nps " << nps;
-        output << " pv";
-        for (Move &m : er.variation)
+        vector<Move> legal_moves = MoveGenerator::generate_moves_legal(b);
+        int16_t best_score = EvaluationEngine::MIN_SCORE;
+        EvaluationResult best_er;
+        int index = 0;
+        for (Move m : legal_moves)
         {
-            output << " " << m;
-        }
-        output << endl;
-        bestmove = er.variation[0];
-        if (elapsed_time > max_time || !thinking.load())
-        {
-            output << "bestmove " << bestmove << endl;
-            return;
+            output << "info currmove " << m << " currmovenumber " << ++index << endl;
+            EvaluationResult er = EvaluationEngine::evaluate(b, i, variation, {m}, hash_table);
+            output << "info depth " << i;
+            output << " score cp " << er.score * board.get_side_to_move();
+            elapsed_time = (double)(clock() - start) / CLOCKS_PER_SEC * 1000;
+            int nodes = hash_table.size();
+            int nps = round(nodes * 1000.0 / (elapsed_time - old_elapsed));
+            output << " time " << (int)elapsed_time;
+            output << " nodes " << nodes;
+            output << " nps " << nps;
+            output << " pv";
+            for (Move &m : er.variation)
+            {
+                output << " " << m;
+            }
+            output << endl;
+            if (er.score * board.get_side_to_move() > best_score)
+            {
+                best_er = er;
+                best_score = er.score * board.get_side_to_move();
+                bestmove = er.variation[0];
+            }
+            if (elapsed_time > max_time || !thinking.load())
+            {
+                output << "bestmove " << bestmove << endl;
+                return;
+            }
         }
     }
     output << "bestmove " << bestmove << endl;
