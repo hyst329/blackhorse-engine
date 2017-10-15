@@ -22,7 +22,7 @@ void UCI::main_loop()
         if (command == "uci")
         {
             output << "id name Blackhorse 0.0" << endl;
-            output << "id author trolley.813" << endl;
+            output << "id author trolley.813 (RUS)" << endl;
             uci_initialised = true;
             output << "uciok" << endl;
         }

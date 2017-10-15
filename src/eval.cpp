@@ -135,8 +135,8 @@ EvaluationResult EvaluationEngine::evaluate_depth(Board &board, int depth, int16
 {
     if (depth == 0)
     {
-        //EvaluationResult res = evaluate_quiesce(board, alpha, beta, variation);
-        EvaluationResult res = evaluate_final(board, variation);
+        EvaluationResult res = evaluate_quiesce(board, alpha, beta, variation);
+        //EvaluationResult res = evaluate_final(board, variation);
         hash_table[board.get_hash()] = res;
         return res;
     }

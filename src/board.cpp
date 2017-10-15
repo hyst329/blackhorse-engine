@@ -190,7 +190,7 @@ void Board::make_move(Move move)
         set_piece(move.get_from(), NONE);
         set_piece(move.get_to(), piece);
         int8_t rook = get_piece(rook_square);
-        Square new_rook_square = (Square)(rook_square + ((move.get_to() / 8 > 4) ? -16 : 16));
+        Square new_rook_square = (Square)(rook_square + ((move.get_to() / 8 > 4) ? -16 : 24));
         set_piece(rook_square, NONE);
         set_piece(new_rook_square, rook);
         move_history.push(move);
@@ -274,7 +274,7 @@ Move Board::unmake_move()
     {
         // it's a castling
         Square rook_square = (Square)((move.get_to() / 8 > 4) * 56 + move.get_from() % 8);
-        Square new_rook_square = (Square)(rook_square + ((move.get_to() / 8 > 4) ? -16 : 16));
+        Square new_rook_square = (Square)(rook_square + ((move.get_to() / 8 > 4) ? -16 : 24));
         int8_t rook = get_piece(new_rook_square);
         set_piece(move.get_from(), piece);
         set_piece(move.get_to(), NONE);

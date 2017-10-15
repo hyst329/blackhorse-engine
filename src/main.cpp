@@ -23,8 +23,8 @@ int perft_test(Board& board, int depth, bool divide_out = true)
         int pt = perft_test(board, depth - 1, false);
         if (divide_out)
         {
-            //cout << board << endl;
             cout << m << " " << pt << endl;
+            //cout << board << endl;
         }
         nodes += pt;
         board.unmake_move();
@@ -38,7 +38,7 @@ int perft_test(int depth)
     return perft_test(board, depth);
 }
 
-int main()
+int main(int argc, char** argv)
 {
     // Board board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     // vector<Move> variation;
@@ -50,7 +50,25 @@ int main()
     //     cout << m << " ";
     // }
     // cout << endl;
-    UCI uci(cin, cout);
-    uci.main_loop();
+    if (argc >= 3 && argv[1] == "--perft"s)
+    {
+        cout << "Running performance test" << endl;
+        int depth = atoi(argv[2]);
+        cout << "Depth is " << depth << endl;
+        string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        if (argc >= 5 && argv[3] == "--fen"s)
+        {
+            fen = argv[4];
+        }
+        Board board(fen);
+        cout << board;
+        cout << perft_test(board, depth) << endl;
+        cout << board;
+    }
+    else
+    {
+        UCI uci(cin, cout);
+        uci.main_loop();
+    }
     return 0;
 }
