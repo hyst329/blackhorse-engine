@@ -30,7 +30,7 @@ void Board::zobrist_initialise()
     std::seed_seq seq(std::begin(seedData), std::end(seedData));
     rng = std::mt19937_64(seq);
 
-    uniform_int_distribution<uint64_t> d;
+    uniform_int_distribution<uint64_t> d(0, (1ULL << 63) - 1); // the MSB will be used for side to move
     for (int i = 0; i < SQUARES_COUNT; i++)
     {
         for (int j = 0; j < TOTAL_PIECES_COUNT; j++)
@@ -50,6 +50,7 @@ Board::Board()
         mailbox_board[i] = NONE;
         hash ^= zobrist_tables[i][NONE + PIECE_OFFSET];
     }
+	hash |= (1ULL << 63);
     for (int i = 0; i < TOTAL_PIECES_COUNT; i++)
         piece_bitboards[i] = 0;
     move_number = 1;
@@ -135,6 +136,10 @@ Board::Board(string fen) : Board()
         }
     }
     side_to_move = (side_to_move_char == "w") ? WHITE : BLACK;
+	if (side_to_move == BLACK)
+	{
+		hash ^= (1ULL << 63);
+	}
     for (char c : castling)
     {
         switch (c)
@@ -196,6 +201,7 @@ void Board::make_move(Move move)
         move_history.push(move);
         (side_to_move == WHITE ? white_castling : black_castling) = NONE;
         side_to_move = -side_to_move;
+		hash ^= (1ULL << 63);
         move_number += (side_to_move == WHITE);
         halfmove_counter++;
     }
@@ -229,6 +235,7 @@ void Board::make_move(Move move)
             black_castling &= QUEENSIDE;
         }
         side_to_move = -side_to_move;
+		hash ^= (1ULL << 63);
         move_number += (side_to_move == WHITE);
         if (abs(piece) == PAWN && en_passant)
         {
@@ -281,6 +288,7 @@ Move Board::unmake_move()
         set_piece(new_rook_square, NONE);
         set_piece(rook_square, rook);
         side_to_move = -side_to_move;
+		hash ^= (1ULL << 63);
         move_number -= (side_to_move == BLACK);
         halfmove_counter--;
     }
@@ -297,6 +305,7 @@ Move Board::unmake_move()
             set_piece(move.get_to(), NONE);
         }
         side_to_move = -side_to_move;
+		hash ^= (1ULL << 63);
         move_number -= (side_to_move == BLACK);
         if (halfmove_counter == 0)
         {
