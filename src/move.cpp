@@ -139,18 +139,38 @@ vector<Move> MoveGenerator::generate_moves_single_piece<PAWN>(const Board &board
     Square left_forward = LEFT[forward], right_forward = RIGHT[forward];
     if (left_forward != INVALID)
     {
-        if (board.get_color(left_forward) == -color)
-        {
-            res.emplace_back(Move(square, left_forward,
-                                  board.get_piece(left_forward)));
-        }
+		if (board.get_color(left_forward) == -color)
+		{
+			int8_t piece = board.get_piece(left_forward);
+			if ((left_forward & 7) == (color == WHITE ? 7 : 0))
+			{
+				res.emplace_back(Move(square, left_forward, piece, color * QUEEN));
+				res.emplace_back(Move(square, left_forward, piece, color * ROOK));
+				res.emplace_back(Move(square, left_forward, piece, color * BISHOP));
+				res.emplace_back(Move(square, left_forward, piece, color * KNIGHT));
+			}
+			else
+			{
+				res.emplace_back(Move(square, left_forward, piece));
+			}
+		}
     }
     if (right_forward != INVALID)
     {
         if (board.get_color(right_forward) == -color)
         {
-            res.emplace_back(Move(square, right_forward,
-                                  board.get_piece(right_forward)));
+			int8_t piece = board.get_piece(right_forward);
+			if ((right_forward & 7) == (color == WHITE ? 7 : 0))
+			{
+				res.emplace_back(Move(square, right_forward, piece, color * QUEEN));
+				res.emplace_back(Move(square, right_forward, piece, color * ROOK));
+				res.emplace_back(Move(square, right_forward, piece, color * BISHOP));
+				res.emplace_back(Move(square, right_forward, piece, color * KNIGHT));
+			}
+			else
+			{
+				res.emplace_back(Move(square, right_forward, piece));
+			}
         }
     }
     // En passant captures NEED WORK!!!
@@ -298,6 +318,7 @@ vector<Move> MoveGenerator::generate_moves_single_piece<KING>(const Board &board
 vector<Move> MoveGenerator::generate_moves_pseudo_legal(const Board &board)
 {
     uint64_t pieces = board.combined_bitboard(board.get_side_to_move());
+	uint64_t free_squares = board.get_bitboard(NONE);
     vector<Move> res;
 //#pragma omp parallel num_threads(8)
 //#pragma omp for nowait reduction(merge : res)
@@ -344,7 +365,7 @@ vector<Move> MoveGenerator::generate_moves_pseudo_legal(const Board &board)
         Square king_square = white_to_move ? E1 : E8;
         Square target_square = white_to_move ? C1 : C8;
         uint64_t mask = white_to_move ? 0x0000000001010100 : 0x0000000080808000; // squares between king and rook
-        if ((pieces & mask) == 0)
+        if ((free_squares & mask) == mask)
         {
             res.push_back(Move(king_square, target_square));
         }
@@ -354,8 +375,8 @@ vector<Move> MoveGenerator::generate_moves_pseudo_legal(const Board &board)
         bool white_to_move = board.get_side_to_move() == WHITE;
         Square king_square = white_to_move ? E1 : E8;
         Square target_square = white_to_move ? G1 : G8;
-        uint64_t mask = white_to_move ? 0x0001010000000000 : 0x0080808000000000; // squares between king and rook
-        if ((pieces & mask) == 0)
+        uint64_t mask = white_to_move ? 0x0001010000000000 : 0x0080800000000000; // squares between king and rook
+        if ((free_squares & mask) == mask)
         {
             res.push_back(Move(king_square, target_square));
         }

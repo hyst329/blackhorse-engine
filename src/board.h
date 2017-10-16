@@ -183,6 +183,7 @@ class Board
     static void zobrist_initialise();
     static mt19937_64 rng;
     uint64_t hash;
+	stack<uint64_t> hashes;
 };
 
 #endif

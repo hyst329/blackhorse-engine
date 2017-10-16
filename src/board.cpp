@@ -161,6 +161,7 @@ Board::Board(string fen) : Board()
     en_passant = en_passant_square[0] == '-' ? 0 : (en_passant_square[0] - 'a' + 1);
     en_passants.push(en_passant);
     castlings.push(white_castling << 2 | black_castling);
+	hashes.push(hash);
 }
 
 ostream &operator<<(ostream &os, const Board &board)
@@ -204,6 +205,7 @@ void Board::make_move(Move move)
 		hash ^= (1ULL << 63);
         move_number += (side_to_move == WHITE);
         halfmove_counter++;
+		en_passant = 0;
     }
     else
     {
@@ -265,6 +267,7 @@ void Board::make_move(Move move)
     }
     en_passants.push(en_passant);
     castlings.push(white_castling << 2 | black_castling);
+	hashes.push(hash);
 }
 
 Move Board::unmake_move()
@@ -274,6 +277,8 @@ Move Board::unmake_move()
     castlings.pop();
     white_castling = castlings.top() >> 2;
     black_castling = castlings.top() & 3;
+	hashes.pop();
+	uint64_t new_hash = hashes.top();
     Move move = move_history.top();
     move_history.pop();
     int8_t piece = get_piece(move.get_to());
@@ -320,6 +325,19 @@ Move Board::unmake_move()
         else
             halfmove_counter--;
     }
+	if (hash != new_hash)
+	{
+		cerr << "Hashes not matching" << endl;
+		cerr << *this;
+		cerr << "Move history: " << endl;
+		while (!move_history.empty())
+		{
+			cerr << move_history.top() << " ";
+			move_history.pop();
+		}
+		cerr << endl << "Attempting to undo move " << move << endl;
+		exit(1);
+	}
     return move;
 }
 

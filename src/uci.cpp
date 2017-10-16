@@ -149,6 +149,8 @@ void UCI::output_thinking(int max_depth, int max_time)
 {
     clock_t start = clock();
     Move bestmove(INVALID, INVALID);
+	EvaluationResult best_er;
+	best_er.score = EvaluationEngine::MIN_SCORE;
     double elapsed_time = 0;
     for (int i = 1; i <= max_depth; i++)
     {
@@ -157,8 +159,6 @@ void UCI::output_thinking(int max_depth, int max_time)
         map<uint64_t, EvaluationResult> hash_table;
         Board b = board;
         vector<Move> legal_moves = MoveGenerator::generate_moves_legal(b);
-        EvaluationResult best_er;
-		best_er.score = EvaluationEngine::MIN_SCORE;
         int index = 0;
         for (Move m : legal_moves)
         {
