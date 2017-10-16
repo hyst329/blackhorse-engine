@@ -128,6 +128,7 @@ EvaluationResult EvaluationEngine::evaluate_final(Board &board, vector<Move> &va
     // int opponent_legal_moves = MoveGenerator::generate_moves_legal(board).size();
     // board.switch_sides();
     // res += MOBILITY_FACTOR * (legal_moves - opponent_legal_moves);
+	res *= board.get_side_to_move();
     return {res, variation};
 }
 
@@ -160,9 +161,7 @@ EvaluationResult EvaluationEngine::evaluate_depth(Board &board, int depth, int16
         }
     }
     sort(moves.begin(), moves.end(), [&board](Move m1, Move m2) { return helper_compare(board, m1, m2); });
-    if (board.get_side_to_move() == WHITE)
     {
-        int16_t v = MIN_SCORE;
         vector<Move> newvar;
         for (Move m : moves)
         {
@@ -178,86 +177,59 @@ EvaluationResult EvaluationEngine::evaluate_depth(Board &board, int depth, int16
             }
             else
             {
-                er = evaluate_depth(board, depth - 1, alpha, beta, newvar, {}, hash_table);
+                er = evaluate_depth(board, depth - 1, -beta, -alpha, newvar, {}, hash_table);
+				er.score = -er.score;
                 hash_table[board.get_hash()] = er;
             }
             newvar = er.variation;
-            v = max(v, er.score);
-            alpha = max(alpha, v);
             board.unmake_move();
-            if (beta <= v)
+			if (er.score >= beta)
+			{
+				er.score = beta;
+				return er;
+			}
+            if (er.score > alpha)
             {
-                break;
+                alpha = er.score;
             }
         }
-        return {v, newvar};
-    }
-    else
-    {
-        int16_t v = MAX_SCORE;
-        vector<Move> newvar;
-        for (Move m : moves)
-        {
-            //cout << depth << m << endl;
-            //cout << alpha << " " << beta << endl;
-            newvar = vector<Move>(variation.begin(), variation.end());
-            newvar.push_back(m);
-            board.make_move(m);
-            EvaluationResult er;
-            if (hash_table.count(board.get_hash()))
-            {
-                er = hash_table[board.get_hash()];
-            }
-            else
-            {
-                er = evaluate_depth(board, depth - 1, alpha, beta, newvar, {}, hash_table);
-                hash_table[board.get_hash()] = er;
-            }
-            newvar = er.variation;
-            v = min(v, er.score);
-            beta = min(beta, v);
-            board.unmake_move();
-            if (v <= alpha)
-            {
-                break;
-            }
-        }
-        return {v, newvar};
+        return {alpha, newvar};
     }
 }
 
 EvaluationResult EvaluationEngine::evaluate_quiesce(Board &board, int16_t alpha, int16_t beta, vector<Move> &variation)
 {
     EvaluationResult er = evaluate_final(board, variation);
-    if (er.score >= beta)
-    {
-        return er;
-    }
-    if (alpha < er.score)
-    {
-        alpha = er.score;
-    }
-    vector<Move> legal_moves = MoveGenerator::generate_moves_legal(board);
-    for (Move m : legal_moves)
-    {
-        if (m.get_captured_piece())
-        {
-            vector<Move> newvar = vector<Move>(variation.begin(), variation.end());
-            newvar.push_back(m);
-            board.make_move(m);
-            EvaluationResult ner = evaluate_quiesce(board, alpha, beta, newvar);
-            board.unmake_move();
-            if (ner.score >= beta)
-            {
-                er.score = beta;
-                return er;
-            }
-            if (ner.score > alpha)
-            {
-                alpha = ner.score;
-            }
-        }
-    }
-    er.score = alpha;
+	if (er.score >= beta)
+	{
+		return er;
+	}
+	if (alpha < er.score)
+	{
+		alpha = er.score;
+	}
+	vector<Move> legal_moves = MoveGenerator::generate_moves_legal(board);
+	for (Move& m : legal_moves)
+	{
+		if (m.get_captured_piece())
+		{
+			board.make_move(m);
+			vector<Move> newvar = variation;
+			newvar.push_back(m);
+			EvaluationResult ner = evaluate_quiesce(board, -beta, -alpha, newvar);
+			ner.score = -ner.score;
+			board.unmake_move();
+			if (ner.score >= beta)
+			{
+				ner.score = beta;
+				return ner;
+			}
+			if (ner.score > alpha)
+			{
+				alpha = ner.score;
+			}
+		}
+	}
+	er.score = alpha;
     return er;
 }

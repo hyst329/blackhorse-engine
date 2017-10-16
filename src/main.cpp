@@ -5,7 +5,7 @@
 #include "eval.h"
 #include "uci.h"
 
-int perft_test(Board& board, int depth, bool divide_out = true)
+uint64_t perft_test(Board& board, int depth, bool divide_out = true)
 {
     if (depth == 0)
     {
@@ -17,22 +17,24 @@ int perft_test(Board& board, int depth, bool divide_out = true)
     {
         return legal_moves.size();
     }
-    for (Move& m : legal_moves)
-    {
-        board.make_move(m);
-        int pt = perft_test(board, depth - 1, false);
-        if (divide_out)
-        {
-            cout << m << " " << pt << endl;
-            //cout << board << endl;
-        }
-        nodes += pt;
-        board.unmake_move();
-    }
+	{
+		for (Move& m : legal_moves)
+		{
+			board.make_move(m);
+			uint64_t pt = perft_test(board, depth - 1, false);
+			if (divide_out)
+			{
+				cout << m << " " << pt << endl;
+				//cout << board << endl;
+			}
+			nodes += pt;
+			board.unmake_move();
+		}
+	}
     return nodes;
 }
 
-int perft_test(int depth)
+uint64_t perft_test(int depth)
 {
     Board board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     return perft_test(board, depth);

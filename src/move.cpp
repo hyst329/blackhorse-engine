@@ -158,11 +158,11 @@ vector<Move> MoveGenerator::generate_moves_single_piece<PAWN>(const Board &board
     {
         if (left_forward == en_passant)
         {
-            res.emplace_back(Move(square, left_forward, -color * PAWN));
+            res.emplace_back(Move(square, left_forward, -color * PAWN, NONE, true));
         }
         if (right_forward == en_passant)
         {
-            res.emplace_back(Move(square, right_forward, -color * PAWN));
+            res.emplace_back(Move(square, right_forward, -color * PAWN, NONE, true));
         }
     }
     if ((square & 7) == (color == WHITE ? 1 : 6))

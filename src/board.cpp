@@ -237,14 +237,14 @@ void Board::make_move(Move move)
         side_to_move = -side_to_move;
 		hash ^= (1ULL << 63);
         move_number += (side_to_move == WHITE);
-        if (abs(piece) == PAWN && en_passant)
+        if (/*abs(piece) == PAWN && en_passant*/ move.get_en_passant())
         {
             // check for en passant capture
-            if (from_file_rank(en_passant, side_to_move == WHITE ? 3 : 6) == move.get_to())
-            {
+            //if (from_file_rank(en_passant, side_to_move == WHITE ? 3 : 6) == move.get_to())
+            //{
                 Square actual_pawn_square = (Square)(move.get_to() + side_to_move);
                 set_piece(actual_pawn_square, NONE);
-            }
+            //}
         }
         if (abs(piece) == PAWN && abs(move.get_from() - move.get_to()) == 2)
         {
@@ -294,16 +294,18 @@ Move Board::unmake_move()
     }
     else
     {
-        bool en_passant_capture = (piece == -side_to_move * PAWN) &&
-                                  (move.get_to() == from_file_rank(en_passant, side_to_move == WHITE ? 3 : 6));
+        bool en_passant_capture = move.get_en_passant();
         int8_t promoted_piece = move.get_promoted_piece();
         set_piece(move.get_from(), promoted_piece ? -side_to_move * PAWN : piece);
-        set_piece(en_passant_capture ? from_file_rank(en_passant, side_to_move == WHITE ? 4 : 5) : move.get_to(),
-                  en_passant_capture ? side_to_move * PAWN : move.get_captured_piece());
-        if (en_passant_capture)
-        {
-            set_piece(move.get_to(), NONE);
-        }
+		if (en_passant_capture)
+		{
+			set_piece(from_file_rank(en_passant, side_to_move == WHITE ? 4 : 5), side_to_move * PAWN);
+			set_piece(move.get_to(), NONE);
+		}
+		else
+		{
+			set_piece(move.get_to(), move.get_captured_piece());
+		}
         side_to_move = -side_to_move;
 		hash ^= (1ULL << 63);
         move_number -= (side_to_move == BLACK);

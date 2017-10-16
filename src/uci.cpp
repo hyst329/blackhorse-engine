@@ -157,15 +157,15 @@ void UCI::output_thinking(int max_depth, int max_time)
         map<uint64_t, EvaluationResult> hash_table;
         Board b = board;
         vector<Move> legal_moves = MoveGenerator::generate_moves_legal(b);
-        int16_t best_score = EvaluationEngine::MIN_SCORE;
         EvaluationResult best_er;
+		best_er.score = EvaluationEngine::MIN_SCORE;
         int index = 0;
         for (Move m : legal_moves)
         {
             output << "info currmove " << m << " currmovenumber " << ++index << endl;
             EvaluationResult er = EvaluationEngine::evaluate(b, i, variation, {m}, hash_table);
             output << "info depth " << i;
-            output << " score cp " << er.score * board.get_side_to_move();
+            output << " score cp " << er.score;
             elapsed_time = (double)(clock() - start) / CLOCKS_PER_SEC * 1000;
             int nodes = hash_table.size();
             int nps = round(nodes * 1000.0 / (elapsed_time - old_elapsed));
@@ -178,10 +178,9 @@ void UCI::output_thinking(int max_depth, int max_time)
                 output << " " << m;
             }
             output << endl;
-            if (er.score * board.get_side_to_move() > best_score)
+            if (er.score > best_er.score)
             {
                 best_er = er;
-                best_score = er.score * board.get_side_to_move();
                 bestmove = er.variation[0];
             }
             if (elapsed_time > max_time || !thinking.load())

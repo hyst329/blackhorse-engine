@@ -13,14 +13,16 @@ class Board;
 class Move
 {
 public:
-  Move(Square from, Square to, int8_t captured_piece = 0, int8_t promoted_piece = 0)
-      : from(from), to(to), captured_piece(captured_piece), promoted_piece(promoted_piece) {}
+  Move(Square from, Square to, int8_t captured_piece = 0, int8_t promoted_piece = 0, bool en_passant = false)
+      : from(from), to(to), captured_piece(captured_piece), promoted_piece(promoted_piece), en_passant(en_passant) {}
   Square get_from() const { return from; }
   Square get_to() const { return to; }
   int8_t get_captured_piece() { return captured_piece; }
   void set_captured_piece(int8_t new_piece) { captured_piece = new_piece; }
   int8_t get_promoted_piece() { return promoted_piece; }
   void set_promoted_piece(int8_t new_piece) { promoted_piece = new_piece; }
+  bool get_en_passant() { return en_passant; }
+  void set_en_passant(bool new_en_passant) { en_passant = new_en_passant; }
   friend ostream &operator<<(ostream &os, Move move)
   {
     os << (char)('a' + (move.from >> 3)) << (char)('1' + (move.from & 7))
@@ -47,6 +49,7 @@ private:
   Square from, to;
   int8_t captured_piece;
   int8_t promoted_piece;
+  bool en_passant;
 };
 
 class MoveGenerator
