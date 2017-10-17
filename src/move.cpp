@@ -455,6 +455,44 @@ bool MoveGenerator::detect_check(const Board &board)
         king_sq_int++;
     }
     Square king_sq = (Square)king_sq_int;
+	// detect orthogonal check (by rooks and/or queens)
+	const Square *ortho_dirs[4] = { UP, DOWN, RIGHT, LEFT };
+	for (const Square *direction : ortho_dirs)
+	{
+		Square current = direction[king_sq];
+		while (current != INVALID)
+		{
+			int8_t piece = board.get_piece(current);
+			if (piece != NONE)
+			{
+				if ((piece == -color * ROOK) || (piece == -color * QUEEN)) // rook or queen of opposite color
+				{
+					return true;
+				}
+				break;
+			}
+			current = direction[current];
+		}
+	}
+	// detect diagonal check (by bishops and/or queens)
+	const Square *dia_dirs[4] = { UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT };
+	for (const Square *direction : dia_dirs)
+	{
+		Square current = direction[king_sq];
+		while (current != INVALID)
+		{
+			int8_t piece = board.get_piece(current);
+			if (piece != NONE)
+			{
+				if ((piece == -color * BISHOP) || (piece == -color * QUEEN)) // bishop or queen of opposite color
+				{
+					return true;
+				}
+				break;
+			}
+			current = direction[current];
+		}
+	}
     // detect check by enemy king (actually impossible but helps for legality check)
     uint64_t enemy_king_bitboard = board.get_bitboard(-color * KING);
     int8_t eking_sq_int = 0;
@@ -486,44 +524,6 @@ bool MoveGenerator::detect_check(const Board &board)
             {
                 return true;
             }
-        }
-    }
-    // detect orthogonal check (by rooks and/or queens)
-    const Square *ortho_dirs[4] = {UP, DOWN, RIGHT, LEFT};
-    for (const Square *direction : ortho_dirs)
-    {
-        Square current = direction[king_sq];
-        while (current != INVALID)
-        {
-            int8_t piece = board.get_piece(current);
-            if (piece != NONE)
-            {
-                if ((piece == -color * ROOK) || (piece == -color * QUEEN)) // rook or queen of opposite color
-                {
-                    return true;
-                }
-                break;
-            }
-            current = direction[current];
-        }
-    }
-    // detect diagonal check (by bishops and/or queens)
-    const Square *dia_dirs[4] = {UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT};
-    for (const Square *direction : dia_dirs)
-    {
-        Square current = direction[king_sq];
-        while (current != INVALID)
-        {
-            int8_t piece = board.get_piece(current);
-            if (piece != NONE)
-            {
-                if ((piece == -color * BISHOP) || (piece == -color * QUEEN)) // bishop or queen of opposite color
-                {
-                    return true;
-                }
-                break;
-            }
-            current = direction[current];
         }
     }
     return false;

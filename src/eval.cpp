@@ -110,7 +110,7 @@ bool helper_compare(Board &board, Move &m1, Move &m2)
     int16_t capturing1_piece_value = PIECE_VALUES[board.get_piecename(m1.get_from())];
     int16_t captured2_piece_value = PIECE_VALUES[abs(m2.get_captured_piece())];
     int16_t capturing2_piece_value = PIECE_VALUES[board.get_piecename(m2.get_from())];
-    return (2 * captured1_piece_value - capturing1_piece_value) > (2 * captured2_piece_value - capturing2_piece_value);
+    return (2 * captured1_piece_value - capturing1_piece_value) < (2 * captured2_piece_value - capturing2_piece_value);
 }
 
 EvaluationResult EvaluationEngine::evaluate_final(Board &board, vector<Move> &variation)

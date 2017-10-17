@@ -152,25 +152,25 @@ void UCI::output_thinking(int max_depth, int max_time)
 	EvaluationResult best_er;
 	best_er.score = EvaluationEngine::MIN_SCORE;
     double elapsed_time = 0;
+	uint64_t all_nodes = 0;
     for (int i = 1; i <= max_depth; i++)
     {
-        double old_elapsed = elapsed_time;
         vector<Move> variation;
-        map<uint64_t, EvaluationResult> hash_table;
-        Board b = board;
-        vector<Move> legal_moves = MoveGenerator::generate_moves_legal(b);
+        //Board b = board;
+        vector<Move> legal_moves = MoveGenerator::generate_moves_legal(board);
+		map<uint64_t, EvaluationResult> hash_table;
         int index = 0;
         for (Move m : legal_moves)
         {
             output << "info currmove " << m << " currmovenumber " << ++index << endl;
-            EvaluationResult er = EvaluationEngine::evaluate(b, i, variation, {m}, hash_table);
+            EvaluationResult er = EvaluationEngine::evaluate(board, i, variation, {m}, hash_table);
             output << "info depth " << i;
             output << " score cp " << er.score;
             elapsed_time = (double)(clock() - start) / CLOCKS_PER_SEC * 1000;
             int nodes = hash_table.size();
-            int nps = round(nodes * 1000.0 / (elapsed_time - old_elapsed));
+            int nps = round(all_nodes * 1000.0 / elapsed_time);
             output << " time " << (int)elapsed_time;
-            output << " nodes " << nodes;
+            output << " nodes " << all_nodes + nodes;
             output << " nps " << nps;
             output << " pv";
             for (Move &m : er.variation)
@@ -188,6 +188,7 @@ void UCI::output_thinking(int max_depth, int max_time)
                 output << "bestmove " << bestmove << endl;
                 return;
             }
+			all_nodes += nodes;
         }
     }
     output << "bestmove " << bestmove << endl;
