@@ -164,7 +164,7 @@ class Board
         return (Square)(file * 8 + rank - 9);
     }
 
-    static mt19937_64 get_rng() { return rng; }
+    static mt19937_64& get_rng() { return rng; }
 
     friend ostream &operator<<(ostream &os, const Board &board);
 

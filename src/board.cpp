@@ -1,5 +1,5 @@
 #include "board.h"
-#ifdef __MINGW32__
+#ifdef WIN32
 #include <windows.h>
 #include <wincrypt.h>
 #endif
@@ -17,7 +17,7 @@ void Board::zobrist_initialise()
     // currently we ignore castling ability and en passant
 
     array<uint8_t, 2496> seedData;
-#ifdef __MINGW32__
+#ifdef WIN32
     HCRYPTPROV p = 0;
     CryptAcquireContextW(&p, 0, 0, PROV_RSA_FULL,
                          CRYPT_VERIFYCONTEXT | CRYPT_SILENT);

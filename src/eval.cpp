@@ -117,8 +117,9 @@ EvaluationResult EvaluationEngine::evaluate_final(Board &board, vector<Move> &va
 {
     int16_t res = 0;
     int16_t pieces_count = 0;
-    normal_distribution<double> normal(1, 0.01);
-    mt19937_64 rng = Board::get_rng();
+    //normal_distribution<double> normal(1, 0.01);
+	static uniform_int_distribution<int16_t> dist(-15, 15);
+    mt19937_64& rng = Board::get_rng();
     for (int i = 0; i < SQUARES_COUNT; i++)
     {
         int8_t piece = board.get_piece((Square)i);
@@ -131,8 +132,10 @@ EvaluationResult EvaluationEngine::evaluate_final(Board &board, vector<Move> &va
     {
         int8_t piece = board.get_piece((Square)i);
         const int16_t *eval_table = (endgame && abs(piece) == KING) ? KING2_EVAL_TABLE : EVAL_TABLES[abs(piece)];
-        res += round((PIECE_VALUES[abs(piece)] + eval_table[piece > 0 ? i : (i & 56 | (7 - i & 7))]) * (piece > 0 ? 1 : -1) * normal(rng));
+        res += round((PIECE_VALUES[abs(piece)] + eval_table[piece > 0 ? i : (i & 56 | (7 - i & 7))]) * (piece > 0 ? 1 : -1) /** normal(rng)*/);
     }
+	int16_t delta = dist(rng);
+	res += delta;
     // int legal_moves = MoveGenerator::generate_moves_legal(board).size();
     // board.switch_sides();
     // int opponent_legal_moves = MoveGenerator::generate_moves_legal(board).size();
