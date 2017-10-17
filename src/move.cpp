@@ -421,11 +421,12 @@ vector<Move> MoveGenerator::generate_moves_legal(Board &board)
         //         break;
         //     }
         // }
+        //cout << m << " ";
         bool legal = !detect_check(board);
         board.switch_sides();
         board.unmake_move();
-        kingside_through_check = ((m.get_from() == ((king > 0) ? E1 : E8) && m.get_to() == ((king > 0) ? F1 : F8)) && (board.get_current_castling() & KINGSIDE) && !legal);
-        queenside_through_check = ((m.get_from() == ((king > 0) ? E1 : E8) && m.get_to() == ((king > 0) ? D1 : D8)) && (board.get_current_castling() & QUEENSIDE) && !legal);
+        kingside_through_check = kingside_through_check || ((m.get_from() == ((king > 0) ? E1 : E8) && m.get_to() == ((king > 0) ? F1 : F8)) && (board.get_current_castling() & KINGSIDE) && !legal);
+        queenside_through_check = queenside_through_check || ((m.get_from() == ((king > 0) ? E1 : E8) && m.get_to() == ((king > 0) ? D1 : D8)) && (board.get_current_castling() & QUEENSIDE) && !legal);
         if ((m.get_from() == ((king > 0) ? E1 : E8) && m.get_to() == ((king > 0) ? G1 : G8)) && board.get_piece(m.get_from()) == king && (kingside_through_check || checked))
         {
             legal = false;
@@ -438,6 +439,7 @@ vector<Move> MoveGenerator::generate_moves_legal(Board &board)
         {
             res.emplace_back(m);
         }
+        //cout << legal << endl;
     }
     return res;
 }
@@ -478,7 +480,9 @@ bool MoveGenerator::detect_check(const Board &board)
         {
             Square forward = (Square)(i - color);
             Square left_forward = LEFT[forward], right_forward = RIGHT[forward];
-            if (((1ULL << left_forward) | (1ULL << right_forward)) & king_bitboard)
+            uint64_t lf_bitboard = (left_forward != INVALID) ? (1ULL << left_forward) : 0;
+            uint64_t rf_bitboard = (right_forward != INVALID) ? (1ULL << right_forward) : 0;
+            if ((lf_bitboard | rf_bitboard) & king_bitboard)
             {
                 return true;
             }

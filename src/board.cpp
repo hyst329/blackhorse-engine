@@ -53,6 +53,7 @@ Board::Board()
 	hash |= (1ULL << 63);
     for (int i = 0; i < TOTAL_PIECES_COUNT; i++)
         piece_bitboards[i] = 0;
+    piece_bitboards[PIECE_OFFSET] = UINT64_MAX;
     move_number = 1;
     halfmove_counter = 0;
     side_to_move = WHITE;
@@ -220,19 +221,19 @@ void Board::make_move(Move move)
         {
             (side_to_move == WHITE ? white_castling : black_castling) = NONE;
         }
-        if ((abs(piece) == ROOK && move.get_to() == A1) || move.get_from() == A1)
+        if ((abs(piece) == ROOK && move.get_from() == A1) || move.get_to() == A1)
         {
             white_castling &= KINGSIDE;
         }
-        if (abs(piece) == ROOK && move.get_to() == H1 || move.get_from() == H1)
+        if (abs(piece) == ROOK && move.get_from() == H1 || move.get_to() == H1)
         {
             white_castling &= QUEENSIDE;
         }
-        if ((abs(piece) == ROOK && move.get_to() == A8) || move.get_from() == A8)
+        if ((abs(piece) == ROOK && move.get_from() == A8) || move.get_to() == A8)
         {
             black_castling &= KINGSIDE;
         }
-        if (abs(piece) == ROOK && move.get_to() == H8 || move.get_from() == H8)
+        if (abs(piece) == ROOK && move.get_from() == H8 || move.get_to() == H8)
         {
             black_castling &= QUEENSIDE;
         }
