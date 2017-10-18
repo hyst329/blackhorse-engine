@@ -4,6 +4,11 @@
 #include <iomanip>
 #include <omp.h>
 
+#ifdef _MSC_VER
+#include <intrin.h>
+#pragma intrinsic(_BitScanForward64)
+#endif // _MSC_VER
+
 //#pragma omp declare reduction(merge : std::vector<Move> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
 
 const uint64_t KING_PATTERNS_TABLE[64] = {
@@ -450,10 +455,18 @@ bool MoveGenerator::detect_check(const Board &board)
     uint64_t king_bitboard = board.get_bitboard(color * KING);
     uint64_t temp = king_bitboard;
     int8_t king_sq_int = 0;
-    while (temp >>= 1)
+    /*while (temp >>= 1)
     {
         king_sq_int++;
-    }
+    }*/
+#ifdef _MSC_VER
+	unsigned long idx;
+	_BitScanForward64(&idx, king_bitboard);
+	king_sq_int = idx;
+#else
+	king_sq_int = __builtin_ctzll(king_bitboard);
+#endif // _MSC_VER
+
     Square king_sq = (Square)king_sq_int;
 	// detect orthogonal check (by rooks and/or queens)
 	const Square *ortho_dirs[4] = { UP, DOWN, RIGHT, LEFT };
@@ -496,10 +509,17 @@ bool MoveGenerator::detect_check(const Board &board)
     // detect check by enemy king (actually impossible but helps for legality check)
     uint64_t enemy_king_bitboard = board.get_bitboard(-color * KING);
     int8_t eking_sq_int = 0;
-    while (enemy_king_bitboard >>= 1)
-    {
-        eking_sq_int++;
-    }
+    //while (enemy_king_bitboard >>= 1)
+    //{
+    //    eking_sq_int++;
+    //}
+#ifdef _MSC_VER
+	unsigned long eidx;
+	_BitScanForward64(&eidx, enemy_king_bitboard);
+	eking_sq_int = eidx;
+#else
+	eking_sq_int = __builtin_ctzll(enemy_king_bitboard);
+#endif // _MSC_VER
     Square eking_sq = (Square)eking_sq_int;
     if (KING_PATTERNS_TABLE[eking_sq] & king_bitboard)
     {
