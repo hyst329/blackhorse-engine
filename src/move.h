@@ -15,6 +15,7 @@ class Move
 public:
   Move(Square from, Square to, int8_t captured_piece = 0, int8_t promoted_piece = 0, bool en_passant = false)
       : from(from), to(to), captured_piece(captured_piece), promoted_piece(promoted_piece), en_passant(en_passant) {}
+  Move() : Move((Square)255, (Square)255) {}
   Square get_from() const { return from; }
   Square get_to() const { return to; }
   int8_t get_captured_piece() { return captured_piece; }

@@ -4,25 +4,22 @@
 #include "board.h"
 
 #include <map>
-
-struct EvaluationResult
-{
-    int16_t score;
-    vector<Move> variation;
-};
+#include <atomic>
+#include <ctime>
 
 class EvaluationEngine
 {
 public:
-    static EvaluationResult evaluate(Board& board, int depth, vector<Move> & variation, vector<Move> movelist, map<uint64_t, EvaluationResult> &hash_table) {
+    static int16_t evaluate(Board& board, int depth, bool show_moves, ostream& output, map<uint64_t, pair<int16_t, int>> &hash_table, map<uint64_t, Move> &hash_var, clock_t scheduled) {
         int16_t alpha = MIN_SCORE, beta = MAX_SCORE;
-        return evaluate_depth(board, depth, alpha, beta, variation, movelist, hash_table);
+        return evaluate_depth(board, depth, alpha, beta, show_moves, output, hash_table, hash_var, scheduled);
     }
     static const int16_t MAX_SCORE = 20000, MIN_SCORE = -20000;
 private:
-    static EvaluationResult evaluate_final(Board &board, vector<Move> &variation);
-    static EvaluationResult evaluate_depth(Board &board, int depth, int16_t alpha, int16_t beta, vector<Move> &variation, vector<Move> movelist, map<uint64_t, EvaluationResult> &hash_table);
-    static EvaluationResult evaluate_quiesce(Board &board, int16_t alpha, int16_t beta, vector<Move> &variation);
+    static int16_t evaluate_final(Board &board);
+    static int16_t evaluate_depth(Board &board, int depth, int16_t alpha, int16_t beta, bool show_moves, ostream& output, 
+		map<uint64_t, pair<int16_t, int>> &hash_table, map<uint64_t, Move> &hash_var, clock_t scheduled);
+    static int16_t evaluate_quiesce(Board &board, int16_t alpha, int16_t beta);
 };
 
 #endif

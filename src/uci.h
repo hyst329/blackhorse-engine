@@ -19,7 +19,7 @@ class UCI
     istream &input;
     ostream &output;
     Board board;
-    atomic_bool thinking = false;
+    atomic_bool stop_thinking = true;
 };
 
 #endif

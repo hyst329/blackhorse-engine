@@ -508,23 +508,35 @@ bool MoveGenerator::detect_check(const Board &board)
     // detect check by enemy knights and pawns
     uint64_t enemy_knights_bitboard = board.get_bitboard(-color * KNIGHT);
     uint64_t enemy_pawns_bitboard = board.get_bitboard(-color * PAWN);
-    for (int i = 0; i < SQUARES_COUNT; i++)
-    {
-        if ((enemy_knights_bitboard & (1ULL << i)) && (KNIGHT_PATTERNS_TABLE[i] & king_bitboard))
-        {
-            return true;
-        }
-        if (enemy_pawns_bitboard & (1ULL << i))
-        {
-            Square forward = (Square)(i - color);
-            Square left_forward = LEFT[forward], right_forward = RIGHT[forward];
-            uint64_t lf_bitboard = (left_forward != INVALID) ? (1ULL << left_forward) : 0;
-            uint64_t rf_bitboard = (right_forward != INVALID) ? (1ULL << right_forward) : 0;
-            if ((lf_bitboard | rf_bitboard) & king_bitboard)
-            {
-                return true;
-            }
-        }
-    }
+    //for (int i = 0; i < SQUARES_COUNT; i++)
+    //{
+    //    /*if ((enemy_knights_bitboard & (1ULL << i)) && (KNIGHT_PATTERNS_TABLE[i] & king_bitboard))
+    //    {
+    //        return true;
+    //    }*/
+    //    if (enemy_pawns_bitboard & (1ULL << i))
+    //    {
+    //        Square forward = (Square)(i - color);
+    //        Square left_forward = LEFT[forward], right_forward = RIGHT[forward];
+    //        uint64_t lf_bitboard = (left_forward != INVALID) ? (1ULL << left_forward) : 0;
+    //        uint64_t rf_bitboard = (right_forward != INVALID) ? (1ULL << right_forward) : 0;
+    //        if ((lf_bitboard | rf_bitboard) & king_bitboard)
+    //        {
+    //            return true;
+    //        }
+    //    }
+    //}
+	if (enemy_knights_bitboard & KNIGHT_PATTERNS_TABLE[king_sq])
+	{
+		return true; // knight checks
+	}
+	Square backward = (Square)(king_sq + color);
+	Square left_backward = LEFT[backward], right_backward = RIGHT[backward];
+	uint64_t lb_bitboard = (left_backward != INVALID) ? (1ULL << left_backward) : 0;
+	uint64_t rb_bitboard = (right_backward != INVALID) ? (1ULL << right_backward) : 0;
+	if ((lb_bitboard | rb_bitboard) & enemy_pawns_bitboard)
+	{
+		return true; // pawn checks
+	}
     return false;
 }
