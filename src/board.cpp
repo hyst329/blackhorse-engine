@@ -5,12 +5,16 @@
 #endif
 #include <array>
 #include <sstream>
+#include <fstream>
 #include <algorithm>
 #include <functional>
 
 uint64_t Board::zobrist_tables[SQUARES_COUNT][TOTAL_PIECES_COUNT]{};
 bool Board::zobrist_initialised = false;
 mt19937_64 Board::rng;
+
+uint64_t ROOK_ATTACKS_TABLE[64][4096];
+uint64_t BISHOP_ATTACKS_TABLE[64][512];
 
 void Board::zobrist_initialise()
 {
@@ -37,6 +41,14 @@ void Board::zobrist_initialise()
         {
             zobrist_tables[i][j] = d(rng);
         }
+    }
+    // initialise bishop and rook attacks squares
+    ifstream rattack("blackhorse_rattacks.dat", ios::binary);
+    ifstream battack("blackhorse_battacks.dat", ios::binary);
+    for (int i = 0; i < 64; i++)
+    {
+        rattack.read((char *)ROOK_ATTACKS_TABLE[i], 4096 * sizeof(uint64_t));
+        battack.read((char *)BISHOP_ATTACKS_TABLE[i], 512 * sizeof(uint64_t));
     }
 }
 

@@ -12,6 +12,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 add_executable(${PROJECT_NAME} ${SOURCES})
 target_link_libraries(${PROJECT_NAME} ${OpenMP_CXX_LIBRARIES})
 
+configure_file(data/blackhorse_rattacks.dat blackhorse_rattacks.dat COPYONLY)
+configure_file(data/blackhorse_battacks.dat blackhorse_battacks.dat COPYONLY)
+
 if(MINGW)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
 find_package(Threads REQUIRED)  
