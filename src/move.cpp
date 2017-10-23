@@ -9,6 +9,8 @@
 #pragma intrinsic(_BitScanForward64)
 #endif // _MSC_VER
 
+#include "magic.h"
+
 //#pragma omp declare reduction(merge : std::vector<Move> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
 
 const uint64_t KING_PATTERNS_TABLE[64] = {
@@ -30,6 +32,28 @@ const uint64_t KNIGHT_PATTERNS_TABLE[64] = {
     0x0204000402000000, 0x0508000805000000, 0x0a1100110a000000, 0x1422002214000000, 0x2844004428000000, 0x5088008850000000, 0xa0100010a0000000, 0x4020002040000000,
     0x0400040200000000, 0x0800080500000000, 0x1100110a00000000, 0x2200221400000000, 0x4400442800000000, 0x8800885000000000, 0x100010a000000000, 0x2000204000000000,
     0x0004020000000000, 0x0008050000000000, 0x00110a0000000000, 0x0022140000000000, 0x0044280000000000, 0x0088500000000000, 0x0010a00000000000, 0x0020400000000000,
+};
+
+const int ROOK_BITS[64] = {
+    12, 11, 11, 11, 11, 11, 11, 12,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    12, 11, 11, 11, 11, 11, 11, 12,
+};
+
+const int BISHOP_BITS[64] = {
+    6, 5, 5, 5, 5, 5, 5, 6,
+    5, 5, 5, 5, 5, 5, 5, 5,
+    5, 5, 7, 7, 7, 7, 5, 5,
+    5, 5, 7, 9, 9, 7, 5, 5,
+    5, 5, 7, 9, 9, 7, 5, 5,
+    5, 5, 7, 7, 7, 7, 5, 5,
+    5, 5, 5, 5, 5, 5, 5, 5,
+    6, 5, 5, 5, 5, 5, 5, 6,
 };
 
 const Square UP[64] = {
@@ -119,6 +143,9 @@ const Square DOWN_LEFT[64] = {
     INVALID, F1, F2, F3, F4, F5, F6, F7,
     INVALID, G1, G2, G3, G4, G5, G6, G7,
 };
+
+extern uint64_t ROOK_ATTACKS_TABLE[64][4096];
+extern uint64_t BISHOP_ATTACKS_TABLE[64][512];
 
 template <>
 vector<Move> MoveGenerator::generate_moves_single_piece<PAWN>(const Board &board, Square square)
@@ -219,29 +246,43 @@ template <>
 vector<Move> MoveGenerator::generate_moves_single_piece<BISHOP>(const Board &board, Square square)
 {
     // TODO (untested): Generate moves for bishop
-    int8_t color = board.get_side_to_move();
+    // int8_t color = board.get_side_to_move();
+    // vector<Move> res;
+    // const Square *directions[4] = {UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT};
+    // for (const Square *direction : directions)
+    // {
+    //     Square current = direction[square];
+    //     while (current != INVALID)
+    //     {
+    //         int8_t piece = board.get_piece(current);
+    //         if (piece != NONE)
+    //         {
+    //             if (piece * color < 0) // opposite colors
+    //             {
+    //                 res.emplace_back(Move(square, current, piece));
+    //             }
+    //             break;
+    //         }
+    //         else
+    //         {
+    //             res.emplace_back(Move(square, current));
+    //         }
+    //         current = direction[current];
+    //     }
+    // }
     vector<Move> res;
-    const Square *directions[4] = {UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT};
-    for (const Square *direction : directions)
+    uint64_t occupied = ~board.get_bitboard(NONE);
+    occupied &= BISHOP_MAGIC[square].mask;
+    occupied *= BISHOP_MAGIC[square].magic;
+    occupied >>= (64 - BISHOP_BITS[square]);
+    uint64_t possible_bitboard = BISHOP_ATTACKS_TABLE[square][occupied];
+    possible_bitboard &= ~board.combined_bitboard(board.get_side_to_move()); // masking out own pieces
+    for (int dest = 0; dest < 64; dest++)
     {
-        Square current = direction[square];
-        while (current != INVALID)
+        if (possible_bitboard & (1ULL << dest))
         {
-            int8_t piece = board.get_piece(current);
-            if (piece != NONE)
-            {
-                if (piece * color < 0) // opposite colors
-                {
-                    res.emplace_back(Move(square, current, piece));
-                }
-                break;
-            }
-            else
-            {
-                res.emplace_back(Move(square, current));
-            }
-            current = direction[current];
-        }
+            res.emplace_back(Move(square, (Square)dest, board.get_piece((Square)dest)));
+        } 
     }
     return res;
 }
@@ -249,28 +290,42 @@ template <>
 vector<Move> MoveGenerator::generate_moves_single_piece<ROOK>(const Board &board, Square square)
 {
     // TODO (untested): Generate moves for rook
-    int8_t color = board.get_side_to_move();
+    // int8_t color = board.get_side_to_move();
+    // vector<Move> res;
+    // const Square *directions[4] = {UP, DOWN, RIGHT, LEFT};
+    // for (const Square *direction : directions)
+    // {
+    //     Square current = direction[square];
+    //     while (current != INVALID)
+    //     {
+    //         int8_t piece = board.get_piece(current);
+    //         if (piece != NONE)
+    //         {
+    //             if (piece * color < 0) // opposite colors
+    //             {
+    //                 res.emplace_back(Move(square, current, piece));
+    //             }
+    //             break;
+    //         }
+    //         else
+    //         {
+    //             res.emplace_back(Move(square, current));
+    //         }
+    //         current = direction[current];
+    //     }
+    // }
     vector<Move> res;
-    const Square *directions[4] = {UP, DOWN, RIGHT, LEFT};
-    for (const Square *direction : directions)
+    uint64_t occupied = ~board.get_bitboard(NONE);
+    occupied &= ROOK_MAGIC[square].mask;
+    occupied *= ROOK_MAGIC[square].magic;
+    occupied >>= (64 - ROOK_BITS[square]);
+    uint64_t possible_bitboard = ROOK_ATTACKS_TABLE[square][occupied];
+    possible_bitboard &= ~board.combined_bitboard(board.get_side_to_move()); // masking out own pieces
+    for (int dest = 0; dest < 64; dest++)
     {
-        Square current = direction[square];
-        while (current != INVALID)
+        if (possible_bitboard & (1ULL << dest))
         {
-            int8_t piece = board.get_piece(current);
-            if (piece != NONE)
-            {
-                if (piece * color < 0) // opposite colors
-                {
-                    res.emplace_back(Move(square, current, piece));
-                }
-                break;
-            }
-            else
-            {
-                res.emplace_back(Move(square, current));
-            }
-            current = direction[current];
+            res.emplace_back(Move(square, (Square)dest, board.get_piece((Square)dest)));
         }
     }
     return res;
@@ -279,28 +334,48 @@ template <>
 vector<Move> MoveGenerator::generate_moves_single_piece<QUEEN>(const Board &board, Square square)
 {
     // TODO (untested): Generate moves for queen
-    int8_t color = board.get_side_to_move();
+    // int8_t color = board.get_side_to_move();
+    // vector<Move> res;
+    // const Square *directions[8] = {UP, DOWN, RIGHT, LEFT, UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT};
+    // for (const Square *direction : directions)
+    // {
+    //     Square current = direction[square];
+    //     while (current != INVALID)
+    //     {
+    //         int8_t piece = board.get_piece(current);
+    //         if (piece != NONE)
+    //         {
+    //             if (piece * color < 0) // opposite colors
+    //             {
+    //                 res.emplace_back(Move(square, current, piece));
+    //             }
+    //             break;
+    //         }
+    //         else
+    //         {
+    //             res.emplace_back(Move(square, current));
+    //         }
+    //         current = direction[current];
+    //     }
+    // }
     vector<Move> res;
-    const Square *directions[8] = {UP, DOWN, RIGHT, LEFT, UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT};
-    for (const Square *direction : directions)
+    uint64_t occupied_rook = ~board.get_bitboard(NONE);
+    occupied_rook &= ROOK_MAGIC[square].mask;
+    occupied_rook *= ROOK_MAGIC[square].magic;
+    occupied_rook >>= (64 - ROOK_BITS[square]);
+    uint64_t possible_bitboard_rook = ROOK_ATTACKS_TABLE[square][occupied_rook];
+    uint64_t occupied_bishop = ~board.get_bitboard(NONE);
+    occupied_bishop &= BISHOP_MAGIC[square].mask;
+    occupied_bishop *= BISHOP_MAGIC[square].magic;
+    occupied_bishop >>= (64 - BISHOP_BITS[square]);
+    uint64_t possible_bitboard_bishop = BISHOP_ATTACKS_TABLE[square][occupied_bishop];
+    uint64_t possible_bitboard = possible_bitboard_rook | possible_bitboard_bishop;
+    possible_bitboard &= ~board.combined_bitboard(board.get_side_to_move()); // masking out own pieces
+    for (int dest = 0; dest < 64; dest++)
     {
-        Square current = direction[square];
-        while (current != INVALID)
+        if (possible_bitboard & (1ULL << dest))
         {
-            int8_t piece = board.get_piece(current);
-            if (piece != NONE)
-            {
-                if (piece * color < 0) // opposite colors
-                {
-                    res.emplace_back(Move(square, current, piece));
-                }
-                break;
-            }
-            else
-            {
-                res.emplace_back(Move(square, current));
-            }
-            current = direction[current];
+            res.emplace_back(Move(square, (Square)dest, board.get_piece((Square)dest)));
         }
     }
     return res;
@@ -468,44 +543,64 @@ bool MoveGenerator::detect_check(const Board &board)
 #endif // _MSC_VER
 
     Square king_sq = (Square)king_sq_int;
-	// detect orthogonal check (by rooks and/or queens)
-	const Square *ortho_dirs[4] = { UP, DOWN, RIGHT, LEFT };
-	for (const Square *direction : ortho_dirs)
-	{
-		Square current = direction[king_sq];
-		while (current != INVALID)
-		{
-			int8_t piece = board.get_piece(current);
-			if (piece != NONE)
-			{
-				if ((piece == -color * ROOK) || (piece == -color * QUEEN)) // rook or queen of opposite color
-				{
-					return true;
-				}
-				break;
-			}
-			current = direction[current];
-		}
-	}
-	// detect diagonal check (by bishops and/or queens)
-	const Square *dia_dirs[4] = { UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT };
-	for (const Square *direction : dia_dirs)
-	{
-		Square current = direction[king_sq];
-		while (current != INVALID)
-		{
-			int8_t piece = board.get_piece(current);
-			if (piece != NONE)
-			{
-				if ((piece == -color * BISHOP) || (piece == -color * QUEEN)) // bishop or queen of opposite color
-				{
-					return true;
-				}
-				break;
-			}
-			current = direction[current];
-		}
-	}
+    uint64_t occupied = 0;
+    uint64_t enemy_rooks_bitboard = board.get_bitboard(-color * ROOK);
+    uint64_t enemy_bishops_bitboard = board.get_bitboard(-color * BISHOP);
+    uint64_t enemy_queens_bitboard = board.get_bitboard(-color * QUEEN);
+    // detect orthogonal check (by rooks and/or queens)
+    // const Square *ortho_dirs[4] = { UP, DOWN, RIGHT, LEFT };
+    // for (const Square *direction : ortho_dirs)
+    // {
+    // 	Square current = direction[king_sq];
+    // 	while (current != INVALID)
+    // 	{
+    // 		int8_t piece = board.get_piece(current);
+    // 		if (piece != NONE)
+    // 		{
+    // 			if ((piece == -color * ROOK) || (piece == -color * QUEEN)) // rook or queen of opposite color
+    // 			{
+    // 				return true;
+    // 			}
+    // 			break;
+    // 		}
+    // 		current = direction[current];
+    // 	}
+    // }
+    occupied = ~board.get_bitboard(NONE);
+    occupied &= ROOK_MAGIC[king_sq].mask;
+    occupied *= ROOK_MAGIC[king_sq].magic;
+    occupied >>= (64 - ROOK_BITS[king_sq]);
+    if (ROOK_ATTACKS_TABLE[king_sq][occupied] & (enemy_rooks_bitboard | enemy_queens_bitboard))
+    {
+        return true;
+    }
+    // detect diagonal check (by bishops and/or queens)
+    // const Square *dia_dirs[4] = {UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT};
+    // for (const Square *direction : dia_dirs)
+	// {
+	// 	Square current = direction[king_sq];
+	// 	while (current != INVALID)
+	// 	{
+	// 		int8_t piece = board.get_piece(current);
+	// 		if (piece != NONE)
+	// 		{
+	// 			if ((piece == -color * BISHOP) || (piece == -color * QUEEN)) // bishop or queen of opposite color
+	// 			{
+	// 				return true;
+	// 			}
+	// 			break;
+	// 		}
+	// 		current = direction[current];
+	// 	}
+    // }
+    occupied = ~board.get_bitboard(NONE);
+    occupied &= BISHOP_MAGIC[king_sq].mask;
+    occupied *= BISHOP_MAGIC[king_sq].magic;
+    occupied >>= (64 - BISHOP_BITS[king_sq]);
+    if (BISHOP_ATTACKS_TABLE[king_sq][occupied] & (enemy_bishops_bitboard | enemy_queens_bitboard))
+    {
+        return true;
+    }
     // detect check by enemy king (actually impossible but helps for legality check)
     uint64_t enemy_king_bitboard = board.get_bitboard(-color * KING);
     int8_t eking_sq_int = 0;
