@@ -175,15 +175,15 @@ class Board
     int8_t en_passant;
     int8_t side_to_move;
     int move_number, halfmove_counter;
-    stack<Move> move_history;
-    stack<int> half_moves;
-    stack<int8_t> en_passants, castlings;
+    vector<Move> move_history;
+	vector<int> half_moves;
+	vector<int8_t> en_passants, castlings;
     static uint64_t zobrist_tables[SQUARES_COUNT][TOTAL_PIECES_COUNT];
     static bool zobrist_initialised;
     static void zobrist_initialise();
     static mt19937_64 rng;
     uint64_t hash;
-	stack<uint64_t> hashes;
+	vector<uint64_t> hashes;
 };
 
 #endif

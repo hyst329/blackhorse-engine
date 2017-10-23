@@ -60,6 +60,11 @@ Board::Board()
     white_castling = NONE;
     black_castling = NONE;
     en_passant = NONE;
+	const int LIMIT = 2048;
+	move_history.reserve(LIMIT);
+	half_moves.reserve(LIMIT);
+	castlings.reserve(LIMIT);
+	en_passants.reserve(LIMIT);
 }
 
 Board::Board(string fen) : Board()
@@ -160,9 +165,9 @@ Board::Board(string fen) : Board()
         }
     }
     en_passant = en_passant_square[0] == '-' ? 0 : (en_passant_square[0] - 'a' + 1);
-    en_passants.push(en_passant);
-    castlings.push(white_castling << 2 | black_castling);
-	hashes.push(hash);
+    en_passants.push_back(en_passant);
+    castlings.push_back(white_castling << 2 | black_castling);
+	hashes.push_back(hash);
 }
 
 ostream &operator<<(ostream &os, const Board &board)
@@ -200,7 +205,7 @@ void Board::make_move(Move move)
         Square new_rook_square = (Square)(rook_square + ((move.get_to() / 8 > 4) ? -16 : 24));
         set_piece(rook_square, NONE);
         set_piece(new_rook_square, rook);
-        move_history.push(move);
+        move_history.push_back(move);
         (side_to_move == WHITE ? white_castling : black_castling) = NONE;
         side_to_move = -side_to_move;
 		hash ^= (1ULL << 63);
@@ -215,7 +220,7 @@ void Board::make_move(Move move)
         set_piece(move.get_from(), NONE);
         set_piece(move.get_to(), promoted_piece ? promoted_piece : piece);
         move.set_captured_piece(captured_piece);
-        move_history.push(move);
+        move_history.push_back(move);
         // remove castling rights
         if (abs(piece) == KING)
         {
@@ -260,28 +265,28 @@ void Board::make_move(Move move)
         }
         if (abs(piece) == PAWN || captured_piece)
         {
-            half_moves.push(halfmove_counter);
+            half_moves.push_back(halfmove_counter);
             halfmove_counter = 0;
         }
         else
             halfmove_counter++;
     }
-    en_passants.push(en_passant);
-    castlings.push(white_castling << 2 | black_castling);
-	hashes.push(hash);
+    en_passants.push_back(en_passant);
+    castlings.push_back(white_castling << 2 | black_castling);
+	hashes.push_back(hash);
 }
 
 Move Board::unmake_move()
 {
-    en_passants.pop();
-    en_passant = en_passants.top();
-    castlings.pop();
-    white_castling = castlings.top() >> 2;
-    black_castling = castlings.top() & 3;
-	hashes.pop();
-	uint64_t new_hash = hashes.top();
-    Move move = move_history.top();
-    move_history.pop();
+    en_passants.pop_back();
+    en_passant = en_passants.back();
+    castlings.pop_back();
+    white_castling = castlings.back() >> 2;
+    black_castling = castlings.back() & 3;
+	hashes.pop_back();
+	uint64_t new_hash = hashes.back();
+    Move move = move_history.back();
+    move_history.pop_back();
     int8_t piece = get_piece(move.get_to());
     if (abs(piece) == KING && abs(move.get_from() - move.get_to()) == 16)
     {
@@ -319,8 +324,8 @@ Move Board::unmake_move()
         {
             if (!half_moves.empty())
             {
-                halfmove_counter = half_moves.top();
-                half_moves.pop();
+                halfmove_counter = half_moves.back();
+                half_moves.pop_back();
             }
         }
         else
@@ -333,8 +338,8 @@ Move Board::unmake_move()
 		cerr << "Move history: " << endl;
 		while (!move_history.empty())
 		{
-			cerr << move_history.top() << " ";
-			move_history.pop();
+			cerr << move_history.back() << " ";
+			move_history.pop_back();
 		}
 		cerr << endl << "Attempting to undo move " << move << endl;
 		exit(1);
