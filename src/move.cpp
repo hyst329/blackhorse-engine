@@ -400,8 +400,9 @@ vector<Move> MoveGenerator::generate_moves_pseudo_legal(const Board &board)
     uint64_t pieces = board.combined_bitboard(board.get_side_to_move());
 	uint64_t free_squares = board.get_bitboard(NONE);
     vector<Move> res;
-//#pragma omp parallel num_threads(8)
-//#pragma omp for nowait reduction(merge : res)
+    res.reserve(256);
+    //#pragma omp parallel num_threads(8)
+    //#pragma omp for nowait reduction(merge : res)
     for (int i = 0; i < SQUARES_COUNT; i++)
     {
         if (pieces & (1ULL << i))
@@ -447,7 +448,7 @@ vector<Move> MoveGenerator::generate_moves_pseudo_legal(const Board &board)
         uint64_t mask = white_to_move ? 0x0000000001010100 : 0x0000000080808000; // squares between king and rook
         if ((free_squares & mask) == mask)
         {
-            res.push_back(Move(king_square, target_square));
+            res.emplace_back(Move(king_square, target_square));
         }
     }
     if (castling & KINGSIDE)
@@ -458,7 +459,7 @@ vector<Move> MoveGenerator::generate_moves_pseudo_legal(const Board &board)
         uint64_t mask = white_to_move ? 0x0001010000000000 : 0x0080800000000000; // squares between king and rook
         if ((free_squares & mask) == mask)
         {
-            res.push_back(Move(king_square, target_square));
+            res.emplace_back(Move(king_square, target_square));
         }
     }
     return res;
@@ -485,11 +486,10 @@ vector<Move> MoveGenerator::generate_moves_legal(Board &board)
     // if (checked) cout << "CHECK!!!\n" << board << endl;
     // Generate all moves
     vector<Move> all_moves = MoveGenerator::generate_moves_pseudo_legal(board);
-    vector<Move> res;
     bool kingside_through_check = false, queenside_through_check = false;
-    for (Move &m : all_moves)
+    for (auto it = all_moves.begin(); it != all_moves.end(); )
     {
-        board.make_move(m);
+        board.make_move(*it);
         board.switch_sides();
         // vector<Move> replies = MoveGenerator::generate_moves_pseudo_legal(board);
         // bool legal = true;
@@ -505,23 +505,27 @@ vector<Move> MoveGenerator::generate_moves_legal(Board &board)
         bool legal = !detect_check(board);
         board.switch_sides();
         board.unmake_move();
-        kingside_through_check = kingside_through_check || ((m.get_from() == ((king > 0) ? E1 : E8) && m.get_to() == ((king > 0) ? F1 : F8)) && (board.get_current_castling() & KINGSIDE) && !legal);
-        queenside_through_check = queenside_through_check || ((m.get_from() == ((king > 0) ? E1 : E8) && m.get_to() == ((king > 0) ? D1 : D8)) && (board.get_current_castling() & QUEENSIDE) && !legal);
-        if ((m.get_from() == ((king > 0) ? E1 : E8) && m.get_to() == ((king > 0) ? G1 : G8)) && board.get_piece(m.get_from()) == king && (kingside_through_check || checked))
+        kingside_through_check = kingside_through_check || ((it->get_from() == ((king > 0) ? E1 : E8) && it->get_to() == ((king > 0) ? F1 : F8)) && (board.get_current_castling() & KINGSIDE) && !legal);
+        queenside_through_check = queenside_through_check || ((it->get_from() == ((king > 0) ? E1 : E8) && it->get_to() == ((king > 0) ? D1 : D8)) && (board.get_current_castling() & QUEENSIDE) && !legal);
+        if ((it->get_from() == ((king > 0) ? E1 : E8) && it->get_to() == ((king > 0) ? G1 : G8)) && board.get_piece(it->get_from()) == king && (kingside_through_check || checked))
         {
             legal = false;
         }
-        if ((m.get_from() == ((king > 0) ? E1 : E8) && m.get_to() == ((king > 0) ? C1 : C8)) && board.get_piece(m.get_from()) == king && (queenside_through_check || checked))
+        if ((it->get_from() == ((king > 0) ? E1 : E8) && it->get_to() == ((king > 0) ? C1 : C8)) && board.get_piece(it->get_from()) == king && (queenside_through_check || checked))
         {
             legal = false;
         }
         if (legal)
         {
-            res.emplace_back(m);
+            it++;
+        }
+        else
+        {
+            it = all_moves.erase(it);
         }
         //cout << legal << endl;
     }
-    return res;
+    return all_moves;
 }
 
 bool MoveGenerator::detect_check(const Board &board)
