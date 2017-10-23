@@ -4,3 +4,5 @@ build
 .vscode
 # Visual Studio properties
 .vs
+
+/blackhorse_*.dat

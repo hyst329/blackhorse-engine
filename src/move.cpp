@@ -148,24 +148,23 @@ extern uint64_t ROOK_ATTACKS_TABLE[64][4096];
 extern uint64_t BISHOP_ATTACKS_TABLE[64][512];
 
 template <>
-vector<Move> MoveGenerator::generate_moves_single_piece<PAWN>(const Board &board, Square square)
+void MoveGenerator::generate_moves_single_piece<PAWN>(const Board &board, Square square, vector<Move> &target)
 {
     int8_t color = board.get_side_to_move();
-    vector<Move> res;
     Square forward = (Square)(square + color);
     Square en_passant = board.get_en_passant_square();
     if (board.get_piece(forward) == NONE)
     {
         if ((forward & 7) == (color == WHITE ? 7 : 0))
         {
-            res.emplace_back(Move(square, forward, NONE, color * QUEEN));
-            res.emplace_back(Move(square, forward, NONE, color * ROOK));
-            res.emplace_back(Move(square, forward, NONE, color * BISHOP));
-            res.emplace_back(Move(square, forward, NONE, color * KNIGHT));
+            target.emplace_back(Move(square, forward, NONE, color * QUEEN));
+            target.emplace_back(Move(square, forward, NONE, color * ROOK));
+            target.emplace_back(Move(square, forward, NONE, color * BISHOP));
+            target.emplace_back(Move(square, forward, NONE, color * KNIGHT));
         }
         else
         {
-            res.emplace_back(Move(square, forward));
+            target.emplace_back(Move(square, forward));
         }
     }
     Square left_forward = LEFT[forward], right_forward = RIGHT[forward];
@@ -176,14 +175,14 @@ vector<Move> MoveGenerator::generate_moves_single_piece<PAWN>(const Board &board
 			int8_t piece = board.get_piece(left_forward);
 			if ((left_forward & 7) == (color == WHITE ? 7 : 0))
 			{
-				res.emplace_back(Move(square, left_forward, piece, color * QUEEN));
-				res.emplace_back(Move(square, left_forward, piece, color * ROOK));
-				res.emplace_back(Move(square, left_forward, piece, color * BISHOP));
-				res.emplace_back(Move(square, left_forward, piece, color * KNIGHT));
+				target.emplace_back(Move(square, left_forward, piece, color * QUEEN));
+				target.emplace_back(Move(square, left_forward, piece, color * ROOK));
+				target.emplace_back(Move(square, left_forward, piece, color * BISHOP));
+				target.emplace_back(Move(square, left_forward, piece, color * KNIGHT));
 			}
 			else
 			{
-				res.emplace_back(Move(square, left_forward, piece));
+				target.emplace_back(Move(square, left_forward, piece));
 			}
 		}
     }
@@ -194,14 +193,14 @@ vector<Move> MoveGenerator::generate_moves_single_piece<PAWN>(const Board &board
 			int8_t piece = board.get_piece(right_forward);
 			if ((right_forward & 7) == (color == WHITE ? 7 : 0))
 			{
-				res.emplace_back(Move(square, right_forward, piece, color * QUEEN));
-				res.emplace_back(Move(square, right_forward, piece, color * ROOK));
-				res.emplace_back(Move(square, right_forward, piece, color * BISHOP));
-				res.emplace_back(Move(square, right_forward, piece, color * KNIGHT));
+				target.emplace_back(Move(square, right_forward, piece, color * QUEEN));
+				target.emplace_back(Move(square, right_forward, piece, color * ROOK));
+				target.emplace_back(Move(square, right_forward, piece, color * BISHOP));
+				target.emplace_back(Move(square, right_forward, piece, color * KNIGHT));
 			}
 			else
 			{
-				res.emplace_back(Move(square, right_forward, piece));
+				target.emplace_back(Move(square, right_forward, piece));
 			}
         }
     }
@@ -210,11 +209,11 @@ vector<Move> MoveGenerator::generate_moves_single_piece<PAWN>(const Board &board
     {
         if (left_forward == en_passant)
         {
-            res.emplace_back(Move(square, left_forward, -color * PAWN, NONE, true));
+            target.emplace_back(Move(square, left_forward, -color * PAWN, NONE, true));
         }
         if (right_forward == en_passant)
         {
-            res.emplace_back(Move(square, right_forward, -color * PAWN, NONE, true));
+            target.emplace_back(Move(square, right_forward, -color * PAWN, NONE, true));
         }
     }
     if ((square & 7) == (color == WHITE ? 1 : 6))
@@ -223,27 +222,24 @@ vector<Move> MoveGenerator::generate_moves_single_piece<PAWN>(const Board &board
         Square forward_two = (Square)(square + 2 * color);
         if (board.get_piece(forward) == NONE && board.get_piece(forward_two) == NONE)
         {
-            res.emplace_back(Move(square, forward_two));
+            target.emplace_back(Move(square, forward_two));
         }
     }
-    return res;
 }
 template <>
-vector<Move> MoveGenerator::generate_moves_single_piece<KNIGHT>(const Board &board, Square square)
+void MoveGenerator::generate_moves_single_piece<KNIGHT>(const Board &board, Square square, vector<Move> &target)
 {
     uint64_t pattern = KNIGHT_PATTERNS_TABLE[square];
-    vector<Move> res;
     for (int i = 0; i < SQUARES_COUNT; i++)
     {
         if ((pattern & (1ULL << i)) && board.get_color((Square)i) != board.get_side_to_move())
         {
-            res.emplace_back(Move(square, (Square)i));
+            target.emplace_back(Move(square, (Square)i));
         }
     }
-    return res;
 }
 template <>
-vector<Move> MoveGenerator::generate_moves_single_piece<BISHOP>(const Board &board, Square square)
+void MoveGenerator::generate_moves_single_piece<BISHOP>(const Board &board, Square square, vector<Move> &target)
 {
     // TODO (untested): Generate moves for bishop
     // int8_t color = board.get_side_to_move();
@@ -270,7 +266,6 @@ vector<Move> MoveGenerator::generate_moves_single_piece<BISHOP>(const Board &boa
     //         current = direction[current];
     //     }
     // }
-    vector<Move> res;
     uint64_t occupied = ~board.get_bitboard(NONE);
     occupied &= BISHOP_MAGIC[square].mask;
     occupied *= BISHOP_MAGIC[square].magic;
@@ -281,13 +276,12 @@ vector<Move> MoveGenerator::generate_moves_single_piece<BISHOP>(const Board &boa
     {
         if (possible_bitboard & (1ULL << dest))
         {
-            res.emplace_back(Move(square, (Square)dest, board.get_piece((Square)dest)));
+            target.emplace_back(Move(square, (Square)dest, board.get_piece((Square)dest)));
         } 
     }
-    return res;
 }
 template <>
-vector<Move> MoveGenerator::generate_moves_single_piece<ROOK>(const Board &board, Square square)
+void MoveGenerator::generate_moves_single_piece<ROOK>(const Board &board, Square square, vector<Move> &target)
 {
     // TODO (untested): Generate moves for rook
     // int8_t color = board.get_side_to_move();
@@ -314,7 +308,6 @@ vector<Move> MoveGenerator::generate_moves_single_piece<ROOK>(const Board &board
     //         current = direction[current];
     //     }
     // }
-    vector<Move> res;
     uint64_t occupied = ~board.get_bitboard(NONE);
     occupied &= ROOK_MAGIC[square].mask;
     occupied *= ROOK_MAGIC[square].magic;
@@ -325,13 +318,12 @@ vector<Move> MoveGenerator::generate_moves_single_piece<ROOK>(const Board &board
     {
         if (possible_bitboard & (1ULL << dest))
         {
-            res.emplace_back(Move(square, (Square)dest, board.get_piece((Square)dest)));
+            target.emplace_back(Move(square, (Square)dest, board.get_piece((Square)dest)));
         }
     }
-    return res;
 }
 template <>
-vector<Move> MoveGenerator::generate_moves_single_piece<QUEEN>(const Board &board, Square square)
+void MoveGenerator::generate_moves_single_piece<QUEEN>(const Board &board, Square square, vector<Move> &target)
 {
     // TODO (untested): Generate moves for queen
     // int8_t color = board.get_side_to_move();
@@ -358,7 +350,6 @@ vector<Move> MoveGenerator::generate_moves_single_piece<QUEEN>(const Board &boar
     //         current = direction[current];
     //     }
     // }
-    vector<Move> res;
     uint64_t occupied_rook = ~board.get_bitboard(NONE);
     occupied_rook &= ROOK_MAGIC[square].mask;
     occupied_rook *= ROOK_MAGIC[square].magic;
@@ -375,24 +366,21 @@ vector<Move> MoveGenerator::generate_moves_single_piece<QUEEN>(const Board &boar
     {
         if (possible_bitboard & (1ULL << dest))
         {
-            res.emplace_back(Move(square, (Square)dest, board.get_piece((Square)dest)));
+            target.emplace_back(Move(square, (Square)dest, board.get_piece((Square)dest)));
         }
     }
-    return res;
 }
 template <>
-vector<Move> MoveGenerator::generate_moves_single_piece<KING>(const Board &board, Square square)
+void MoveGenerator::generate_moves_single_piece<KING>(const Board &board, Square square, vector<Move> &target)
 {
     uint64_t pattern = KING_PATTERNS_TABLE[square];
-    vector<Move> res;
     for (int i = 0; i < SQUARES_COUNT; i++)
     {
         if ((pattern & (1ULL << i)) && board.get_color((Square)i) != board.get_side_to_move())
         {
-            res.emplace_back(Move(square, (Square)i));
+            target.emplace_back(Move(square, (Square)i));
         }
     }
-    return res;
 }
 
 vector<Move> MoveGenerator::generate_moves_pseudo_legal(const Board &board)
@@ -408,32 +396,25 @@ vector<Move> MoveGenerator::generate_moves_pseudo_legal(const Board &board)
         if (pieces & (1ULL << i))
         {
             int8_t piece = board.get_piecename((Square)i);
-            vector<Move> v;
             switch (piece)
             {
             case PAWN:
-                v = generate_moves_single_piece<PAWN>(board, (Square)i);
-                res.insert(res.end(), make_move_iterator(v.begin()), make_move_iterator(v.end()));
+                generate_moves_single_piece<PAWN>(board, (Square)i, res);
                 break;
             case KNIGHT:
-                v = generate_moves_single_piece<KNIGHT>(board, (Square)i);
-                res.insert(res.end(), make_move_iterator(v.begin()), make_move_iterator(v.end()));
+                generate_moves_single_piece<KNIGHT>(board, (Square)i, res);
                 break;
             case BISHOP:
-                v = generate_moves_single_piece<BISHOP>(board, (Square)i);
-                res.insert(res.end(), make_move_iterator(v.begin()), make_move_iterator(v.end()));
+                generate_moves_single_piece<BISHOP>(board, (Square)i, res);
                 break;
             case ROOK:
-                v = generate_moves_single_piece<ROOK>(board, (Square)i);
-                res.insert(res.end(), make_move_iterator(v.begin()), make_move_iterator(v.end()));
+                generate_moves_single_piece<ROOK>(board, (Square)i, res);
                 break;
             case QUEEN:
-                v = generate_moves_single_piece<QUEEN>(board, (Square)i);
-                res.insert(res.end(), make_move_iterator(v.begin()), make_move_iterator(v.end()));
+                generate_moves_single_piece<QUEEN>(board, (Square)i, res);
                 break;
             case KING:
-                v = generate_moves_single_piece<KING>(board, (Square)i);
-                res.insert(res.end(), make_move_iterator(v.begin()), make_move_iterator(v.end()));
+                generate_moves_single_piece<KING>(board, (Square)i, res);
                 break;
             }
         }

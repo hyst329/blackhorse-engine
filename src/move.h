@@ -62,7 +62,7 @@ public:
 
 private:
   template <int piece>
-  static vector<Move> generate_moves_single_piece(const Board &board, Square square);
+  static void generate_moves_single_piece(const Board &board, Square square, vector<Move> &target);
 };
 
 #endif
