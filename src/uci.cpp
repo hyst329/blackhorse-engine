@@ -148,7 +148,7 @@ void UCI::main_loop()
 void UCI::output_thinking(int max_depth, int max_time)
 {
 	clock_t start = clock();
-	clock_t scheduled = start + (clock_t)(max_time * 1000.0 / CLOCKS_PER_SEC);
+	clock_t scheduled = start + (clock_t)(max_time / 1000.0 * CLOCKS_PER_SEC);
 	Move bestmove(INVALID, INVALID);
 	int16_t best_er = EvaluationEngine::MIN_SCORE;
 	double elapsed_time = 0;
