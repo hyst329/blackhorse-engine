@@ -134,7 +134,7 @@ int16_t EvaluationEngine::evaluate_final(Board &board)
 	{
 		int8_t piece = board.get_piece((Square)i);
 		const int16_t *eval_table = (endgame && abs(piece) == KING) ? KING2_EVAL_TABLE : EVAL_TABLES[abs(piece)];
-		res += round((PIECE_VALUES[abs(piece)] + eval_table[piece > 0 ? i : (i & 56 | (7 - i & 7))]) * (piece > 0 ? 1 : -1) /** normal(rng)*/);
+		res += (PIECE_VALUES[abs(piece)] + eval_table[piece > 0 ? i : (i & 56 | (7 - i & 7))]) * (piece > 0 ? 1 : -1);
 	}
 	int16_t delta = dist(rng);
 	res += delta;
@@ -153,6 +153,7 @@ int16_t EvaluationEngine::evaluate_depth(Board &board, int depth, int16_t alpha,
 	map<uint64_t, pair<int16_t, int>> &hash_table, map<uint64_t, Move> &hash_var,
 	clock_t scheduled)
 {
+	int16_t best_score = MIN_SCORE;
 	if (depth == 0 || clock() > scheduled)
 	{
 		int16_t res = evaluate_quiesce(board, alpha, beta);
@@ -187,7 +188,7 @@ int16_t EvaluationEngine::evaluate_depth(Board &board, int depth, int16_t alpha,
 		//cout << alpha << " " << beta << endl;
 		board.make_move(m);
 		int16_t er;
-		if (hash_table.count(board.get_hash()) && depth > hash_table[board.get_hash()].second)
+		if (hash_table.count(board.get_hash()) /*&& depth > hash_table[board.get_hash()].second*/)
 		{
 			er = hash_table[board.get_hash()].first;
 		}
@@ -199,11 +200,15 @@ int16_t EvaluationEngine::evaluate_depth(Board &board, int depth, int16_t alpha,
 		board.unmake_move();
 		if (er >= beta)
 		{
-			return beta;
+			return er;
 		}
-		if (er > alpha)
+		if (er > best_score)
 		{
-			alpha = er;
+			best_score = er;
+			if (er > alpha)
+			{
+				alpha = er;
+			}
 			hash_var[board.get_hash()] = m;
 		}
 	}
