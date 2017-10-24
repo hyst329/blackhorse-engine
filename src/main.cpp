@@ -5,7 +5,7 @@
 #include "eval.h"
 #include "uci.h"
 
-uint64_t perft_test(Board& board, int depth, bool divide_out = true)
+uint64_t perft_test(Board &board, int depth, bool divide_out = true)
 {
     if (depth == 0)
     {
@@ -17,20 +17,20 @@ uint64_t perft_test(Board& board, int depth, bool divide_out = true)
     {
         return legal_moves.size();
     }
-	{
-		for (Move& m : legal_moves)
-		{
-			board.make_move(m);
-			uint64_t pt = perft_test(board, depth - 1, false);
-			if (divide_out)
-			{
-				cout << m << " " << pt << endl;
-				//cout << board << endl;
-			}
-			nodes += pt;
-			board.unmake_move();
-		}
-	}
+    {
+        for (Move &m : legal_moves)
+        {
+            board.make_move(m);
+            uint64_t pt = perft_test(board, depth - 1, false);
+            if (divide_out)
+            {
+                cout << m << " " << pt << endl;
+                //cout << board << endl;
+            }
+            nodes += pt;
+            board.unmake_move();
+        }
+    }
     return nodes;
 }
 
@@ -40,7 +40,7 @@ uint64_t perft_test(int depth)
     return perft_test(board, depth);
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
     // Board board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     // vector<Move> variation;
@@ -64,8 +64,11 @@ int main(int argc, char** argv)
         }
         Board board(fen);
         cout << board;
-        cout << perft_test(board, depth) << endl;
-        cout << board;
+        clock_t start = clock();
+        uint64_t perft = perft_test(board, depth);
+        clock_t end = clock();
+        cout << "perft: " << perft << endl;
+        cout << "nps: " << (uint64_t)(perft / ((end - start) * 1.0 / CLOCKS_PER_SEC)) << endl;
     }
     else
     {

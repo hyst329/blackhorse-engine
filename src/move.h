@@ -34,6 +34,10 @@ public:
     }
     return os;
   }
+  bool operator==(Move &other)
+  {
+    return from == other.from && to == other.to;
+  }
   Move(string move_str)
   {
     if (move_str.size() == 4)

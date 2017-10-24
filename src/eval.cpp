@@ -106,13 +106,21 @@ const int16_t *EVAL_TABLES[PIECES_COUNT + 1] = {
 	KING1_EVAL_TABLE,
 };
 
-bool helper_compare(Board &board, Move &m1, Move &m2)
+bool helper_compare(Board &board, Move& bestmove, Move &m1, Move &m2)
 {
-	int16_t captured1_piece_value = PIECE_VALUES[abs(m1.get_captured_piece())];
-	int16_t capturing1_piece_value = PIECE_VALUES[board.get_piecename(m1.get_from())];
-	int16_t captured2_piece_value = PIECE_VALUES[abs(m2.get_captured_piece())];
-	int16_t capturing2_piece_value = PIECE_VALUES[board.get_piecename(m2.get_from())];
-	return (2 * captured1_piece_value - capturing1_piece_value) > (2 * captured2_piece_value - capturing2_piece_value);
+	if (m1 == bestmove)
+	{
+		return true;
+	}
+	if (m2 == bestmove)
+	{
+		return false;
+	}
+	int8_t captured1_piece = abs(m1.get_captured_piece());
+	int8_t capturing1_piece = board.get_piecename(m1.get_from());
+	int8_t captured2_piece = abs(m2.get_captured_piece());
+	int8_t capturing2_piece = board.get_piecename(m2.get_from());
+	return (10 * captured1_piece - capturing1_piece) > (10 * captured2_piece - capturing2_piece);
 }
 
 int16_t EvaluationEngine::evaluate_final(Board &board)
@@ -148,17 +156,17 @@ int16_t EvaluationEngine::evaluate_final(Board &board)
 	return res;
 }
 
-int16_t EvaluationEngine::evaluate_depth(Board &board, int depth, int16_t alpha, int16_t beta,
-	bool show_moves, ostream& output, 
-	map<uint64_t, pair<int16_t, int>> &hash_table, map<uint64_t, Move> &hash_var,
-	clock_t scheduled)
+int16_t EvaluationEngine::evaluate_depth(Board &board, int depth, int odepth, int16_t alpha, int16_t beta,
+										 bool show_moves, ostream &output,
+										 map<uint64_t, pair<int16_t, int>> &hash_table, map<uint64_t, Move> &hash_var,
+										 clock_t scheduled, Move bestmove)
 {
 	int16_t best_score = MIN_SCORE;
 	if (depth == 0 || clock() > scheduled)
 	{
 		int16_t res = evaluate_quiesce(board, alpha, beta);
 		//EvaluationResult res = evaluate_final(board);
-		hash_table[board.get_hash()] = { res, depth };
+		hash_table[board.get_hash()] = {res, odepth - depth};
 		return res;
 	}
 	vector<Move> moves = MoveGenerator::generate_moves_legal(board);
@@ -167,16 +175,16 @@ int16_t EvaluationEngine::evaluate_depth(Board &board, int depth, int16_t alpha,
 		if (MoveGenerator::detect_check(board))
 		{
 			int16_t checkmate_score = board.get_side_to_move() == WHITE ? MIN_SCORE : MAX_SCORE;
-			hash_table[board.get_hash()] = { checkmate_score, depth };
+			hash_table[board.get_hash()] = {checkmate_score, odepth - depth};
 			return hash_table[board.get_hash()].first;
 		}
 		else
 		{
-			hash_table[board.get_hash()] = { 0, depth };
+			hash_table[board.get_hash()] = {0, odepth - depth};
 			return hash_table[board.get_hash()].first;
 		}
 	}
-	sort(moves.begin(), moves.end(), [&board](Move m1, Move m2) { return helper_compare(board, m1, m2); });
+	sort(moves.begin(), moves.end(), [&board, &bestmove](Move m1, Move m2) { return helper_compare(board, bestmove, m1, m2); });
 	int index = 0;
 	for (Move m : moves)
 	{
@@ -188,14 +196,16 @@ int16_t EvaluationEngine::evaluate_depth(Board &board, int depth, int16_t alpha,
 		//cout << alpha << " " << beta << endl;
 		board.make_move(m);
 		int16_t er;
-		if (hash_table.count(board.get_hash()) /*&& depth > hash_table[board.get_hash()].second*/)
+		if (hash_table.count(board.get_hash()) && hash_table[board.get_hash()].second > odepth - depth)
 		{
 			er = hash_table[board.get_hash()].first;
 		}
 		else
 		{
-			er = -evaluate_depth(board, depth - 1, -beta, -alpha, false, output, hash_table, hash_var, scheduled);
-			hash_table[board.get_hash()] = { er, depth };
+			auto mit = hash_var.find(board.get_hash());
+			Move m = mit != hash_var.end() ? mit->second : Move();
+			er = -evaluate_depth(board, depth - 1, odepth, -beta, -alpha, false, output, hash_table, hash_var, scheduled, m);
+			hash_table[board.get_hash()] = {er, odepth - depth};
 		}
 		board.unmake_move();
 		if (er >= beta)

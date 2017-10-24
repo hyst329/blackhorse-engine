@@ -153,12 +153,12 @@ void UCI::output_thinking(int max_depth, int max_time)
 	int16_t best_er = EvaluationEngine::MIN_SCORE;
 	double elapsed_time = 0;
 	uint64_t all_nodes = 0;
+	map<uint64_t, pair<int16_t, int>> hash_table;
+	map<uint64_t, Move> hash_var;
 	for (int i = 1; i <= max_depth; i++)
 	{
 		vector<Move> variation;
-		map<uint64_t, pair<int16_t, int>> hash_table;
-		map<uint64_t, Move> hash_var;
-		int16_t er = EvaluationEngine::evaluate(board, i, true, output, hash_table, hash_var, scheduled);
+		int16_t er = EvaluationEngine::evaluate(board, i, true, output, hash_table, hash_var, scheduled, bestmove);
 		if (i > 1 && clock() > scheduled)
 		{
 			break;
@@ -192,7 +192,7 @@ void UCI::output_thinking(int max_depth, int max_time)
 		int nodes = hash_table.size();
 		int nps = round((all_nodes + nodes) * 1000.0 / elapsed_time);
 		output << " time " << (int)elapsed_time;
-		output << " nodes " << all_nodes + nodes;
+		output << " nodes " << nodes/*all_nodes + nodes*/;
 		output << " nps " << nps;
 		output << " pv";
 		for (Move &m : variation)
