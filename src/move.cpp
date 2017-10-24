@@ -490,7 +490,7 @@ vector<Move> MoveGenerator::generate_moves_legal(Board &board, bool captures_onl
     bool checked = detect_check(board);
     // if (checked) cout << "CHECK!!!\n" << board << endl;
     // Generate all moves
-    vector<Move> all_moves = MoveGenerator::generate_moves_pseudo_legal(board);
+    vector<Move> all_moves = MoveGenerator::generate_moves_pseudo_legal(board, captures_only);
     bool kingside_through_check = false, queenside_through_check = false;
     for (auto it = all_moves.begin(); it != all_moves.end();)
     {
