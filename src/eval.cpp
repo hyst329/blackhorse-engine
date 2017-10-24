@@ -14,6 +14,8 @@ const int16_t PIECE_VALUES[PIECES_COUNT + 1] = {
 
 const int16_t MOBILITY_FACTOR = 5;
 
+const int16_t TEMPO_BONUS = 25;
+
 const int16_t NONE_EVAL_TABLE[SQUARES_COUNT] = {};
 
 const int16_t PAWN_EVAL_TABLE[SQUARES_COUNT] = {
@@ -142,6 +144,7 @@ int16_t EvaluationEngine::evaluate_final(Board &board)
 	// board.switch_sides();
 	// res += MOBILITY_FACTOR * (legal_moves - opponent_legal_moves);
 	res *= board.get_side_to_move();
+	res += TEMPO_BONUS;
 	return res;
 }
 
@@ -210,19 +213,19 @@ int16_t EvaluationEngine::evaluate_depth(Board &board, int depth, int16_t alpha,
 
 int16_t EvaluationEngine::evaluate_quiesce(Board &board, int16_t alpha, int16_t beta)
 {
-	vector<Move> legal_moves = MoveGenerator::generate_moves_legal(board);
-	if (legal_moves.empty())
-	{
-		if (MoveGenerator::detect_check(board))
-		{
-			int16_t checkmate_score = board.get_side_to_move() == WHITE ? MIN_SCORE : MAX_SCORE;
-			return checkmate_score;
-		}
-		else
-		{
-			return 0;
-		}
-	}
+	vector<Move> legal_captures = MoveGenerator::generate_moves_legal(board, true);
+	// if (legal_moves.empty())
+	// {
+	// 	if (MoveGenerator::detect_check(board))
+	// 	{
+	// 		int16_t checkmate_score = board.get_side_to_move() == WHITE ? MIN_SCORE : MAX_SCORE;
+	// 		return checkmate_score;
+	// 	}
+	// 	else
+	// 	{
+	// 		return 0;
+	// 	}
+	// }
 	int16_t er = evaluate_final(board);
 	if (er >= beta)
 	{
@@ -232,10 +235,10 @@ int16_t EvaluationEngine::evaluate_quiesce(Board &board, int16_t alpha, int16_t 
 	{
 		alpha = er;
 	}
-	for (Move &m : legal_moves)
+	for (Move &m : legal_captures)
 	{
-		if (m.get_captured_piece())
-		{
+		//if (m.get_captured_piece())
+		//{
 			board.make_move(m);
 			int16_t ner = -evaluate_quiesce(board, -beta, -alpha);
 			board.unmake_move();
@@ -247,7 +250,7 @@ int16_t EvaluationEngine::evaluate_quiesce(Board &board, int16_t alpha, int16_t 
 			{
 				alpha = ner;
 			}
-		}
+		//}
 	}
 	return alpha;
 }

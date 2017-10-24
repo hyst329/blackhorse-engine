@@ -56,13 +56,13 @@ private:
 class MoveGenerator
 {
 public:
-  static vector<Move> generate_moves_pseudo_legal(const Board &board);
-  static vector<Move> generate_moves_legal(Board &board);
+  static vector<Move> generate_moves_pseudo_legal(const Board &board, bool captures_only = false);
+  static vector<Move> generate_moves_legal(Board &board, bool captures_only = false);
   static bool detect_check(const Board &board);
 
 private:
   template <int piece>
-  static void generate_moves_single_piece(const Board &board, Square square, vector<Move> &target);
+  static void generate_moves_single_piece(const Board &board, Square square, vector<Move> &target, bool captures_only = false);
 };
 
 #endif

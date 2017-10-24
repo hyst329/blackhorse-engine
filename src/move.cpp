@@ -148,12 +148,12 @@ extern uint64_t ROOK_ATTACKS_TABLE[64][4096];
 extern uint64_t BISHOP_ATTACKS_TABLE[64][512];
 
 template <>
-void MoveGenerator::generate_moves_single_piece<PAWN>(const Board &board, Square square, vector<Move> &target)
+void MoveGenerator::generate_moves_single_piece<PAWN>(const Board &board, Square square, vector<Move> &target, bool captures_only)
 {
     int8_t color = board.get_side_to_move();
     Square forward = (Square)(square + color);
     Square en_passant = board.get_en_passant_square();
-    if (board.get_piece(forward) == NONE)
+    if (!captures_only && board.get_piece(forward) == NONE)
     {
         if ((forward & 7) == (color == WHITE ? 7 : 0))
         {
@@ -170,38 +170,38 @@ void MoveGenerator::generate_moves_single_piece<PAWN>(const Board &board, Square
     Square left_forward = LEFT[forward], right_forward = RIGHT[forward];
     if (left_forward != INVALID)
     {
-		if (board.get_color(left_forward) == -color)
-		{
-			int8_t piece = board.get_piece(left_forward);
-			if ((left_forward & 7) == (color == WHITE ? 7 : 0))
-			{
-				target.emplace_back(Move(square, left_forward, piece, color * QUEEN));
-				target.emplace_back(Move(square, left_forward, piece, color * ROOK));
-				target.emplace_back(Move(square, left_forward, piece, color * BISHOP));
-				target.emplace_back(Move(square, left_forward, piece, color * KNIGHT));
-			}
-			else
-			{
-				target.emplace_back(Move(square, left_forward, piece));
-			}
-		}
+        if (board.get_color(left_forward) == -color)
+        {
+            int8_t piece = board.get_piece(left_forward);
+            if ((left_forward & 7) == (color == WHITE ? 7 : 0))
+            {
+                target.emplace_back(Move(square, left_forward, piece, color * QUEEN));
+                target.emplace_back(Move(square, left_forward, piece, color * ROOK));
+                target.emplace_back(Move(square, left_forward, piece, color * BISHOP));
+                target.emplace_back(Move(square, left_forward, piece, color * KNIGHT));
+            }
+            else
+            {
+                target.emplace_back(Move(square, left_forward, piece));
+            }
+        }
     }
     if (right_forward != INVALID)
     {
         if (board.get_color(right_forward) == -color)
         {
-			int8_t piece = board.get_piece(right_forward);
-			if ((right_forward & 7) == (color == WHITE ? 7 : 0))
-			{
-				target.emplace_back(Move(square, right_forward, piece, color * QUEEN));
-				target.emplace_back(Move(square, right_forward, piece, color * ROOK));
-				target.emplace_back(Move(square, right_forward, piece, color * BISHOP));
-				target.emplace_back(Move(square, right_forward, piece, color * KNIGHT));
-			}
-			else
-			{
-				target.emplace_back(Move(square, right_forward, piece));
-			}
+            int8_t piece = board.get_piece(right_forward);
+            if ((right_forward & 7) == (color == WHITE ? 7 : 0))
+            {
+                target.emplace_back(Move(square, right_forward, piece, color * QUEEN));
+                target.emplace_back(Move(square, right_forward, piece, color * ROOK));
+                target.emplace_back(Move(square, right_forward, piece, color * BISHOP));
+                target.emplace_back(Move(square, right_forward, piece, color * KNIGHT));
+            }
+            else
+            {
+                target.emplace_back(Move(square, right_forward, piece));
+            }
         }
     }
     // En passant captures NEED WORK!!!
@@ -216,7 +216,7 @@ void MoveGenerator::generate_moves_single_piece<PAWN>(const Board &board, Square
             target.emplace_back(Move(square, right_forward, -color * PAWN, NONE, true));
         }
     }
-    if ((square & 7) == (color == WHITE ? 1 : 6))
+    if (!captures_only && (square & 7) == (color == WHITE ? 1 : 6))
     {
         // pawn is on her starting position
         Square forward_two = (Square)(square + 2 * color);
@@ -227,19 +227,24 @@ void MoveGenerator::generate_moves_single_piece<PAWN>(const Board &board, Square
     }
 }
 template <>
-void MoveGenerator::generate_moves_single_piece<KNIGHT>(const Board &board, Square square, vector<Move> &target)
+void MoveGenerator::generate_moves_single_piece<KNIGHT>(const Board &board, Square square, vector<Move> &target, bool captures_only)
 {
-    uint64_t pattern = KNIGHT_PATTERNS_TABLE[square];
+    uint64_t needed_squares = board.combined_bitboard(-board.get_side_to_move());
+    if (!captures_only)
+    {
+        needed_squares |= board.get_bitboard(NONE);
+    }
+    uint64_t pattern = KNIGHT_PATTERNS_TABLE[square] & needed_squares;
     for (int i = 0; i < SQUARES_COUNT; i++)
     {
-        if ((pattern & (1ULL << i)) && board.get_color((Square)i) != board.get_side_to_move())
+        if (pattern & (1ULL << i))
         {
-            target.emplace_back(Move(square, (Square)i));
+            target.emplace_back(Move(square, (Square)i, board.get_piece((Square)i)));
         }
     }
 }
 template <>
-void MoveGenerator::generate_moves_single_piece<BISHOP>(const Board &board, Square square, vector<Move> &target)
+void MoveGenerator::generate_moves_single_piece<BISHOP>(const Board &board, Square square, vector<Move> &target, bool captures_only)
 {
     // TODO (untested): Generate moves for bishop
     // int8_t color = board.get_side_to_move();
@@ -272,16 +277,20 @@ void MoveGenerator::generate_moves_single_piece<BISHOP>(const Board &board, Squa
     occupied >>= (64 - BISHOP_BITS[square]);
     uint64_t possible_bitboard = BISHOP_ATTACKS_TABLE[square][occupied];
     possible_bitboard &= ~board.combined_bitboard(board.get_side_to_move()); // masking out own pieces
+    if (captures_only)
+    {
+        possible_bitboard &= ~board.get_bitboard(NONE); // masking out free squares
+    }
     for (int dest = 0; dest < 64; dest++)
     {
         if (possible_bitboard & (1ULL << dest))
         {
             target.emplace_back(Move(square, (Square)dest, board.get_piece((Square)dest)));
-        } 
+        }
     }
 }
 template <>
-void MoveGenerator::generate_moves_single_piece<ROOK>(const Board &board, Square square, vector<Move> &target)
+void MoveGenerator::generate_moves_single_piece<ROOK>(const Board &board, Square square, vector<Move> &target, bool captures_only)
 {
     // TODO (untested): Generate moves for rook
     // int8_t color = board.get_side_to_move();
@@ -314,6 +323,10 @@ void MoveGenerator::generate_moves_single_piece<ROOK>(const Board &board, Square
     occupied >>= (64 - ROOK_BITS[square]);
     uint64_t possible_bitboard = ROOK_ATTACKS_TABLE[square][occupied];
     possible_bitboard &= ~board.combined_bitboard(board.get_side_to_move()); // masking out own pieces
+    if (captures_only)
+    {
+        possible_bitboard &= ~board.get_bitboard(NONE); // masking out free squares
+    }
     for (int dest = 0; dest < 64; dest++)
     {
         if (possible_bitboard & (1ULL << dest))
@@ -323,7 +336,7 @@ void MoveGenerator::generate_moves_single_piece<ROOK>(const Board &board, Square
     }
 }
 template <>
-void MoveGenerator::generate_moves_single_piece<QUEEN>(const Board &board, Square square, vector<Move> &target)
+void MoveGenerator::generate_moves_single_piece<QUEEN>(const Board &board, Square square, vector<Move> &target, bool captures_only)
 {
     // TODO (untested): Generate moves for queen
     // int8_t color = board.get_side_to_move();
@@ -362,6 +375,10 @@ void MoveGenerator::generate_moves_single_piece<QUEEN>(const Board &board, Squar
     uint64_t possible_bitboard_bishop = BISHOP_ATTACKS_TABLE[square][occupied_bishop];
     uint64_t possible_bitboard = possible_bitboard_rook | possible_bitboard_bishop;
     possible_bitboard &= ~board.combined_bitboard(board.get_side_to_move()); // masking out own pieces
+    if (captures_only)
+    {
+        possible_bitboard &= ~board.get_bitboard(NONE); // masking out free squares
+    }
     for (int dest = 0; dest < 64; dest++)
     {
         if (possible_bitboard & (1ULL << dest))
@@ -371,22 +388,27 @@ void MoveGenerator::generate_moves_single_piece<QUEEN>(const Board &board, Squar
     }
 }
 template <>
-void MoveGenerator::generate_moves_single_piece<KING>(const Board &board, Square square, vector<Move> &target)
+void MoveGenerator::generate_moves_single_piece<KING>(const Board &board, Square square, vector<Move> &target, bool captures_only)
 {
-    uint64_t pattern = KING_PATTERNS_TABLE[square];
+    uint64_t needed_squares = board.combined_bitboard(-board.get_side_to_move());
+    if (!captures_only)
+    {
+        needed_squares |= board.get_bitboard(NONE);
+    }
+    uint64_t pattern = KING_PATTERNS_TABLE[square] & needed_squares;
     for (int i = 0; i < SQUARES_COUNT; i++)
     {
-        if ((pattern & (1ULL << i)) && board.get_color((Square)i) != board.get_side_to_move())
+        if (pattern & (1ULL << i))
         {
-            target.emplace_back(Move(square, (Square)i));
+            target.emplace_back(Move(square, (Square)i, board.get_piece((Square)i)));
         }
     }
 }
 
-vector<Move> MoveGenerator::generate_moves_pseudo_legal(const Board &board)
+vector<Move> MoveGenerator::generate_moves_pseudo_legal(const Board &board, bool captures_only)
 {
     uint64_t pieces = board.combined_bitboard(board.get_side_to_move());
-	uint64_t free_squares = board.get_bitboard(NONE);
+    uint64_t free_squares = board.get_bitboard(NONE);
     vector<Move> res;
     res.reserve(256);
     //#pragma omp parallel num_threads(8)
@@ -399,54 +421,56 @@ vector<Move> MoveGenerator::generate_moves_pseudo_legal(const Board &board)
             switch (piece)
             {
             case PAWN:
-                generate_moves_single_piece<PAWN>(board, (Square)i, res);
+                generate_moves_single_piece<PAWN>(board, (Square)i, res, captures_only);
                 break;
             case KNIGHT:
-                generate_moves_single_piece<KNIGHT>(board, (Square)i, res);
+                generate_moves_single_piece<KNIGHT>(board, (Square)i, res, captures_only);
                 break;
             case BISHOP:
-                generate_moves_single_piece<BISHOP>(board, (Square)i, res);
+                generate_moves_single_piece<BISHOP>(board, (Square)i, res, captures_only);
                 break;
             case ROOK:
-                generate_moves_single_piece<ROOK>(board, (Square)i, res);
+                generate_moves_single_piece<ROOK>(board, (Square)i, res, captures_only);
                 break;
             case QUEEN:
-                generate_moves_single_piece<QUEEN>(board, (Square)i, res);
+                generate_moves_single_piece<QUEEN>(board, (Square)i, res, captures_only);
                 break;
             case KING:
-                generate_moves_single_piece<KING>(board, (Square)i, res);
+                generate_moves_single_piece<KING>(board, (Square)i, res, captures_only);
                 break;
             }
         }
     }
-    // TODO: Add castling
-    int8_t castling = board.get_current_castling();
-    if (castling & QUEENSIDE)
+    if (!captures_only)
     {
-        bool white_to_move = board.get_side_to_move() == WHITE;
-        Square king_square = white_to_move ? E1 : E8;
-        Square target_square = white_to_move ? C1 : C8;
-        uint64_t mask = white_to_move ? 0x0000000001010100 : 0x0000000080808000; // squares between king and rook
-        if ((free_squares & mask) == mask)
+        int8_t castling = board.get_current_castling();
+        if (castling & QUEENSIDE)
         {
-            res.emplace_back(Move(king_square, target_square));
+            bool white_to_move = board.get_side_to_move() == WHITE;
+            Square king_square = white_to_move ? E1 : E8;
+            Square target_square = white_to_move ? C1 : C8;
+            uint64_t mask = white_to_move ? 0x0000000001010100 : 0x0000000080808000; // squares between king and rook
+            if ((free_squares & mask) == mask)
+            {
+                res.emplace_back(Move(king_square, target_square));
+            }
         }
-    }
-    if (castling & KINGSIDE)
-    {
-        bool white_to_move = board.get_side_to_move() == WHITE;
-        Square king_square = white_to_move ? E1 : E8;
-        Square target_square = white_to_move ? G1 : G8;
-        uint64_t mask = white_to_move ? 0x0001010000000000 : 0x0080800000000000; // squares between king and rook
-        if ((free_squares & mask) == mask)
+        if (castling & KINGSIDE)
         {
-            res.emplace_back(Move(king_square, target_square));
+            bool white_to_move = board.get_side_to_move() == WHITE;
+            Square king_square = white_to_move ? E1 : E8;
+            Square target_square = white_to_move ? G1 : G8;
+            uint64_t mask = white_to_move ? 0x0001010000000000 : 0x0080800000000000; // squares between king and rook
+            if ((free_squares & mask) == mask)
+            {
+                res.emplace_back(Move(king_square, target_square));
+            }
         }
     }
     return res;
 }
 
-vector<Move> MoveGenerator::generate_moves_legal(Board &board)
+vector<Move> MoveGenerator::generate_moves_legal(Board &board, bool captures_only)
 {
     // TODO: Something more effective
     int8_t king = board.get_side_to_move() * KING;
@@ -468,7 +492,7 @@ vector<Move> MoveGenerator::generate_moves_legal(Board &board)
     // Generate all moves
     vector<Move> all_moves = MoveGenerator::generate_moves_pseudo_legal(board);
     bool kingside_through_check = false, queenside_through_check = false;
-    for (auto it = all_moves.begin(); it != all_moves.end(); )
+    for (auto it = all_moves.begin(); it != all_moves.end();)
     {
         board.make_move(*it);
         board.switch_sides();
@@ -515,16 +539,16 @@ bool MoveGenerator::detect_check(const Board &board)
     uint64_t king_bitboard = board.get_bitboard(color * KING);
     uint64_t temp = king_bitboard;
     int8_t king_sq_int = 0;
-    /*while (temp >>= 1)
+/*while (temp >>= 1)
     {
         king_sq_int++;
     }*/
 #ifdef _MSC_VER
-	unsigned long idx;
-	_BitScanForward64(&idx, king_bitboard);
-	king_sq_int = idx;
+    unsigned long idx;
+    _BitScanForward64(&idx, king_bitboard);
+    king_sq_int = idx;
 #else
-	king_sq_int = __builtin_ctzll(king_bitboard);
+    king_sq_int = __builtin_ctzll(king_bitboard);
 #endif // _MSC_VER
 
     Square king_sq = (Square)king_sq_int;
@@ -562,21 +586,21 @@ bool MoveGenerator::detect_check(const Board &board)
     // detect diagonal check (by bishops and/or queens)
     // const Square *dia_dirs[4] = {UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT};
     // for (const Square *direction : dia_dirs)
-	// {
-	// 	Square current = direction[king_sq];
-	// 	while (current != INVALID)
-	// 	{
-	// 		int8_t piece = board.get_piece(current);
-	// 		if (piece != NONE)
-	// 		{
-	// 			if ((piece == -color * BISHOP) || (piece == -color * QUEEN)) // bishop or queen of opposite color
-	// 			{
-	// 				return true;
-	// 			}
-	// 			break;
-	// 		}
-	// 		current = direction[current];
-	// 	}
+    // {
+    // 	Square current = direction[king_sq];
+    // 	while (current != INVALID)
+    // 	{
+    // 		int8_t piece = board.get_piece(current);
+    // 		if (piece != NONE)
+    // 		{
+    // 			if ((piece == -color * BISHOP) || (piece == -color * QUEEN)) // bishop or queen of opposite color
+    // 			{
+    // 				return true;
+    // 			}
+    // 			break;
+    // 		}
+    // 		current = direction[current];
+    // 	}
     // }
     occupied = ~board.get_bitboard(NONE);
     occupied &= BISHOP_MAGIC[king_sq].mask;
@@ -589,16 +613,16 @@ bool MoveGenerator::detect_check(const Board &board)
     // detect check by enemy king (actually impossible but helps for legality check)
     uint64_t enemy_king_bitboard = board.get_bitboard(-color * KING);
     int8_t eking_sq_int = 0;
-    //while (enemy_king_bitboard >>= 1)
-    //{
-    //    eking_sq_int++;
-    //}
+//while (enemy_king_bitboard >>= 1)
+//{
+//    eking_sq_int++;
+//}
 #ifdef _MSC_VER
-	unsigned long eidx;
-	_BitScanForward64(&eidx, enemy_king_bitboard);
-	eking_sq_int = eidx;
+    unsigned long eidx;
+    _BitScanForward64(&eidx, enemy_king_bitboard);
+    eking_sq_int = eidx;
 #else
-	eking_sq_int = __builtin_ctzll(enemy_king_bitboard);
+    eking_sq_int = __builtin_ctzll(enemy_king_bitboard);
 #endif // _MSC_VER
     Square eking_sq = (Square)eking_sq_int;
     if (KING_PATTERNS_TABLE[eking_sq] & king_bitboard)
@@ -626,17 +650,17 @@ bool MoveGenerator::detect_check(const Board &board)
     //        }
     //    }
     //}
-	if (enemy_knights_bitboard & KNIGHT_PATTERNS_TABLE[king_sq])
-	{
-		return true; // knight checks
-	}
-	Square backward = (Square)(king_sq + color);
-	Square left_backward = LEFT[backward], right_backward = RIGHT[backward];
-	uint64_t lb_bitboard = (left_backward != INVALID) ? (1ULL << left_backward) : 0;
-	uint64_t rb_bitboard = (right_backward != INVALID) ? (1ULL << right_backward) : 0;
-	if ((lb_bitboard | rb_bitboard) & enemy_pawns_bitboard)
-	{
-		return true; // pawn checks
-	}
+    if (enemy_knights_bitboard & KNIGHT_PATTERNS_TABLE[king_sq])
+    {
+        return true; // knight checks
+    }
+    Square backward = (Square)(king_sq + color);
+    Square left_backward = LEFT[backward], right_backward = RIGHT[backward];
+    uint64_t lb_bitboard = (left_backward != INVALID) ? (1ULL << left_backward) : 0;
+    uint64_t rb_bitboard = (right_backward != INVALID) ? (1ULL << right_backward) : 0;
+    if ((lb_bitboard | rb_bitboard) & enemy_pawns_bitboard)
+    {
+        return true; // pawn checks
+    }
     return false;
 }
