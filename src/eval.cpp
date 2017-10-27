@@ -128,7 +128,7 @@ int16_t EvaluationEngine::evaluate_final(Board &board)
 	int16_t res = 0;
 	int16_t pieces_count = 0;
 	//normal_distribution<double> normal(1, 0.01);
-	static uniform_int_distribution<int16_t> dist(-15, 15);
+	static uniform_int_distribution<int16_t> dist(-5, 5);
 	mt19937_64& rng = Board::get_rng();
 	for (int i = 0; i < SQUARES_COUNT; i++)
 	{
@@ -146,11 +146,11 @@ int16_t EvaluationEngine::evaluate_final(Board &board)
 	}
 	int16_t delta = dist(rng);
 	res += delta;
-	// int legal_moves = MoveGenerator::generate_moves_legal(board).size();
-	// board.switch_sides();
-	// int opponent_legal_moves = MoveGenerator::generate_moves_legal(board).size();
-	// board.switch_sides();
-	// res += MOBILITY_FACTOR * (legal_moves - opponent_legal_moves);
+	//int legal_moves = MoveGenerator::generate_moves_legal(board).size();
+	//board.switch_sides();
+	//int opponent_legal_moves = MoveGenerator::generate_moves_legal(board).size();
+	//board.switch_sides();
+	//res += MOBILITY_FACTOR * (legal_moves - opponent_legal_moves);
 	res *= board.get_side_to_move();
 	res += TEMPO_BONUS;
 	return res;
@@ -196,15 +196,15 @@ int16_t EvaluationEngine::evaluate_depth(Board &board, int depth, int odepth, in
 		//cout << alpha << " " << beta << endl;
 		board.make_move(m);
 		int16_t er;
-		if (hash_table.count(board.get_hash()) && hash_table[board.get_hash()].second > odepth - depth)
+		/*if (hash_table.count(board.get_hash()) && hash_table[board.get_hash()].second > odepth - depth)
 		{
 			er = hash_table[board.get_hash()].first;
 		}
-		else
+		else*/
 		{
 			auto mit = hash_var.find(board.get_hash());
-			Move m = mit != hash_var.end() ? mit->second : Move();
-			er = -evaluate_depth(board, depth - 1, odepth, -beta, -alpha, false, output, hash_table, hash_var, scheduled, m);
+			Move m0 = mit != hash_var.end() ? mit->second : Move();
+			er = -evaluate_depth(board, depth - 1, odepth, -beta, -alpha, false, output, hash_table, hash_var, scheduled, m0);
 			hash_table[board.get_hash()] = {er, odepth - depth};
 		}
 		board.unmake_move();
