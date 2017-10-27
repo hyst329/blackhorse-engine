@@ -220,6 +220,7 @@ int16_t EvaluationEngine::evaluate_depth(Board &board, int depth, int odepth, in
 				alpha = er;
 			}
 			hash_var[board.get_hash()] = m;
+			hash_table[board.get_hash()] = {er, odepth - depth + 1};
 		}
 	}
 	//cout << "depth=" << depth << " pv=" << variation.size() << endl;
