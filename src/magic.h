@@ -1,8 +1,9 @@
 #ifndef MAGIC_H
 #define MAGIC_H
-struct MaskedMagic
-{
-    uint64_t mask, magic;
+#include <cstdint>
+
+struct MaskedMagic {
+  uint64_t mask, magic;
 };
 
 const MaskedMagic ROOK_MAGIC[64] = {
