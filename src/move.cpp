@@ -12,7 +12,7 @@
 #include "magic.h"
 
 //#pragma omp declare reduction(merge : std::vector<Move> :
-//omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
+// omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
 
 const uint64_t KING_PATTERNS_TABLE[64] = {
     0x0000000000000302, 0x0000000000000705, 0x0000000000000e0a,
@@ -546,20 +546,22 @@ bool MoveGenerator::detect_check(const Board &board) {
   int8_t color = board.get_side_to_move();
   uint64_t king_bitboard = board.get_bitboard(color * KING);
   uint64_t temp = king_bitboard;
-  int8_t king_sq_int = 0;
-/*while (temp >>= 1)
-    {
-        king_sq_int++;
-    }*/
-#ifdef _MSC_VER
-  unsigned long idx;
-  _BitScanForward64(&idx, king_bitboard);
-  king_sq_int = idx;
-#else
-  king_sq_int = __builtin_ctzll(king_bitboard);
-#endif // _MSC_VER
-
-  Square king_sq = (Square)king_sq_int;
+  Square king_sq = board.get_my_king_location();
+  Square eking_sq = board.get_enemy_king_location();
+  //   int8_t king_sq_int = 0;
+  // /*while (temp >>= 1)
+  //     {
+  //         king_sq_int++;
+  //     }*/
+  // #ifdef _MSC_VER
+  //   unsigned long idx;
+  //   _BitScanForward64(&idx, king_bitboard);
+  //   king_sq_int = idx;
+  // #else
+  //   king_sq_int = __builtin_ctzll(king_bitboard);
+  // #endif // _MSC_VER
+  //
+  //   Square king_sq = (Square)king_sq_int;
   uint64_t occupied = 0;
   uint64_t enemy_rooks_bitboard = board.get_bitboard(-color * ROOK);
   uint64_t enemy_bishops_bitboard = board.get_bitboard(-color * BISHOP);
@@ -574,8 +576,8 @@ bool MoveGenerator::detect_check(const Board &board) {
   // 		int8_t piece = board.get_piece(current);
   // 		if (piece != NONE)
   // 		{
-  // 			if ((piece == -color * ROOK) || (piece == -color * QUEEN)) // rook
-  // or queen of opposite color
+  // 			if ((piece == -color * ROOK) || (piece == -color * QUEEN))
+  // // rook or queen of opposite color
   // 			{
   // 				return true;
   // 			}
@@ -602,8 +604,9 @@ bool MoveGenerator::detect_check(const Board &board) {
   // 		int8_t piece = board.get_piece(current);
   // 		if (piece != NONE)
   // 		{
-  // 			if ((piece == -color * BISHOP) || (piece == -color * QUEEN)) //
-  // bishop or queen of opposite color
+  // 			if ((piece == -color * BISHOP) || (piece == -color *
+  // QUEEN))
+  // // bishop or queen of opposite color
   // 			{
   // 				return true;
   // 			}
@@ -623,22 +626,22 @@ bool MoveGenerator::detect_check(const Board &board) {
   // detect check by enemy king (actually impossible but helps for legality
   // check)
   uint64_t enemy_king_bitboard = board.get_bitboard(-color * KING);
-  int8_t eking_sq_int = 0;
-// while (enemy_king_bitboard >>= 1)
-//{
-//    eking_sq_int++;
-//}
-#ifdef _MSC_VER
-  unsigned long eidx;
-  _BitScanForward64(&eidx, enemy_king_bitboard);
-  eking_sq_int = eidx;
-#else
-  eking_sq_int = __builtin_ctzll(enemy_king_bitboard);
-#endif // _MSC_VER
-  Square eking_sq = (Square)eking_sq_int;
-  if (KING_PATTERNS_TABLE[eking_sq] & king_bitboard) {
-    return true;
-  }
+  //   int8_t eking_sq_int = 0;
+  // // while (enemy_king_bitboard >>= 1)
+  // //{
+  // //    eking_sq_int++;
+  // //}
+  // #ifdef _MSC_VER
+  //   unsigned long eidx;
+  //   _BitScanForward64(&eidx, enemy_king_bitboard);
+  //   eking_sq_int = eidx;
+  // #else
+  //   eking_sq_int = __builtin_ctzll(enemy_king_bitboard);
+  // #endif // _MSC_VER
+  //   Square eking_sq = (Square)eking_sq_int;
+  //   if (KING_PATTERNS_TABLE[eking_sq] & king_bitboard) {
+  //     return true;
+  //   }
   // detect check by enemy knights and pawns
   uint64_t enemy_knights_bitboard = board.get_bitboard(-color * KNIGHT);
   uint64_t enemy_pawns_bitboard = board.get_bitboard(-color * PAWN);

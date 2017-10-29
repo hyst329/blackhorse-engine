@@ -130,6 +130,12 @@ public:
     hash ^= zobrist_tables[square][old_piece + PIECE_OFFSET];
     hash ^= zobrist_tables[square][piece + PIECE_OFFSET];
     mailbox_board[square] = piece;
+    if (piece == WHITE * KING) {
+      white_king_location = square;
+    }
+    if (piece == BLACK * KING) {
+      black_king_location = square;
+    }
   }
 
   uint64_t get_hash() const { return hash; }
@@ -148,6 +154,15 @@ public:
     return color == WHITE ? white_castling : black_castling;
   }
   int8_t get_current_castling() const { return get_castling(side_to_move); }
+  Square get_king_location(int8_t color) const {
+    return color == WHITE ? white_king_location : black_king_location;
+  }
+  Square get_my_king_location() const {
+    return get_king_location(side_to_move);
+  }
+  Square get_enemy_king_location() const {
+    return get_king_location(-side_to_move);
+  }
   Square get_en_passant_square() const {
     return en_passant > 0
                ? from_file_rank(en_passant, (side_to_move == WHITE) ? 6 : 3)
@@ -174,6 +189,7 @@ private:
   int8_t en_passant;
   int8_t side_to_move;
   int move_number, halfmove_counter;
+  Square white_king_location, black_king_location;
   vector<Move> move_history;
   vector<int> half_moves;
   vector<int8_t> en_passants, castlings;

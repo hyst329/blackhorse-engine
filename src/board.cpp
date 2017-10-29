@@ -1,7 +1,8 @@
 #include "board.h"
 #ifdef WIN32
-#include <wincrypt.h>
 #include <windows.h>
+// this line left blank to prevent clang-format import sorting
+#include <wincrypt.h>
 #endif
 #include <algorithm>
 #include <array>
