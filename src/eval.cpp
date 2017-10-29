@@ -112,7 +112,7 @@ int16_t EvaluationEngine::evaluate_final(Board &board) {
                                     ? KING2_EVAL_TABLE
                                     : EVAL_TABLES[abs(piece)];
     res += (PIECE_VALUES[abs(piece)] +
-            eval_table[piece > 0 ? i : (i & 56 | (7 - i & 7))]) *
+            eval_table[piece > 0 ? i : ((i & 56) | (7 - i & 7))]) *
            (piece > 0 ? 1 : -1);
   }
   int16_t delta = dist(rng);
@@ -120,7 +120,8 @@ int16_t EvaluationEngine::evaluate_final(Board &board) {
   // int legal_moves = MoveGenerator::generate_moves_legal(board).size();
   // board.switch_sides();
   // int opponent_legal_moves =
-  // MoveGenerator::generate_moves_legal(board).size();  board.switch_sides();  res
+  // MoveGenerator::generate_moves_legal(board).size();  board.switch_sides();
+  // res
   // += MOBILITY_FACTOR * (legal_moves - opponent_legal_moves);
   res *= board.get_side_to_move();
   res += TEMPO_BONUS;

@@ -190,7 +190,7 @@ int BBits[64] = {
 };
 
 int main() {
-  int square, i;
+  int square;
   FILE *mg = fopen("magic.h", "w");
   FILE *ra = fopen("blackhorse_rattacks.dat", "wb");
   FILE *ba = fopen("blackhorse_battacks.dat", "wb");

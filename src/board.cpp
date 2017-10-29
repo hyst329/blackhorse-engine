@@ -228,13 +228,13 @@ void Board::make_move(Move move) {
     if ((abs(piece) == ROOK && move.get_from() == A1) || move.get_to() == A1) {
       white_castling &= KINGSIDE;
     }
-    if (abs(piece) == ROOK && move.get_from() == H1 || move.get_to() == H1) {
+    if ((abs(piece) == ROOK && move.get_from() == H1) || move.get_to() == H1) {
       white_castling &= QUEENSIDE;
     }
     if ((abs(piece) == ROOK && move.get_from() == A8) || move.get_to() == A8) {
       black_castling &= KINGSIDE;
     }
-    if (abs(piece) == ROOK && move.get_from() == H8 || move.get_to() == H8) {
+    if ((abs(piece) == ROOK && move.get_from() == H8) || move.get_to() == H8) {
       black_castling &= QUEENSIDE;
     }
     side_to_move = -side_to_move;

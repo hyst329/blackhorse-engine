@@ -153,8 +153,10 @@ void UCI::output_thinking(int max_depth, int max_time) {
     }
     if (er == EvaluationEngine::MIN_SCORE) {
       output << " score mate -" << (i / 2);
+      stop_thinking.store(true);
     } else if (er == EvaluationEngine::MAX_SCORE) {
       output << " score mate " << ((i + 1) / 2);
+      stop_thinking.store(true);
     } else {
       output << " score cp " << er;
     }
