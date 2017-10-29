@@ -2,17 +2,8 @@
 #include "board.h"
 
 #include <iomanip>
-#include <omp.h>
-
-#ifdef _MSC_VER
-#include <intrin.h>
-#pragma intrinsic(_BitScanForward64)
-#endif // _MSC_VER
 
 #include "magic.h"
-
-//#pragma omp declare reduction(merge : std::vector<Move> :
-// omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
 
 const uint64_t KING_PATTERNS_TABLE[64] = {
     0x0000000000000302, 0x0000000000000705, 0x0000000000000e0a,
@@ -412,8 +403,6 @@ vector<Move> MoveGenerator::generate_moves_pseudo_legal(const Board &board,
   uint64_t free_squares = board.get_bitboard(NONE);
   vector<Move> res;
   res.reserve(256);
-  //#pragma omp parallel num_threads(8)
-  //#pragma omp for nowait reduction(merge : res)
   for (int i = 0; i < SQUARES_COUNT; i++) {
     if (pieces & (1ULL << i)) {
       int8_t piece = board.get_piecename((Square)i);
@@ -576,7 +565,8 @@ bool MoveGenerator::detect_check(const Board &board) {
   // 		int8_t piece = board.get_piece(current);
   // 		if (piece != NONE)
   // 		{
-  // 			if ((piece == -color * ROOK) || (piece == -color * QUEEN))
+  // 			if ((piece == -color * ROOK) || (piece == -color *
+  // QUEEN))
   // // rook or queen of opposite color
   // 			{
   // 				return true;

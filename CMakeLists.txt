@@ -2,12 +2,9 @@ cmake_minimum_required(VERSION 3.0)
 
 project(Blackhorse)
 
-find_package(OpenMP REQUIRED)
-
 set(CMAKE_CXX_STANDARD 17)
 set(SOURCES src/main.cpp src/board.cpp src/move.cpp src/eval.cpp src/uci.cpp)
-set(HEADERS src/board.h src/move.h src/eval.h src/uci.h)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+set(HEADERS src/board.h src/move.h src/eval.h src/uci.h src/magic.h)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
@@ -17,7 +14,7 @@ RelWithDebInfo MinSizeRel."
 endif(NOT CMAKE_BUILD_TYPE)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
-target_link_libraries(${PROJECT_NAME} ${OpenMP_CXX_LIBRARIES})
+target_link_libraries(${PROJECT_NAME})
 
 configure_file(data/blackhorse_rattacks.dat blackhorse_rattacks.dat COPYONLY)
 configure_file(data/blackhorse_battacks.dat blackhorse_battacks.dat COPYONLY)
