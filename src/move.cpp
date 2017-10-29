@@ -534,7 +534,6 @@ vector<Move> MoveGenerator::generate_moves_legal(Board &board,
 bool MoveGenerator::detect_check(const Board &board) {
   int8_t color = board.get_side_to_move();
   uint64_t king_bitboard = board.get_bitboard(color * KING);
-  uint64_t temp = king_bitboard;
   Square king_sq = board.get_my_king_location();
   Square eking_sq = board.get_enemy_king_location();
   //   int8_t king_sq_int = 0;
@@ -615,7 +614,6 @@ bool MoveGenerator::detect_check(const Board &board) {
   }
   // detect check by enemy king (actually impossible but helps for legality
   // check)
-  uint64_t enemy_king_bitboard = board.get_bitboard(-color * KING);
   //   int8_t eking_sq_int = 0;
   // // while (enemy_king_bitboard >>= 1)
   // //{
@@ -629,9 +627,9 @@ bool MoveGenerator::detect_check(const Board &board) {
   //   eking_sq_int = __builtin_ctzll(enemy_king_bitboard);
   // #endif // _MSC_VER
   //   Square eking_sq = (Square)eking_sq_int;
-  //   if (KING_PATTERNS_TABLE[eking_sq] & king_bitboard) {
-  //     return true;
-  //   }
+  if (KING_PATTERNS_TABLE[eking_sq] & king_bitboard) {
+    return true;
+  }
   // detect check by enemy knights and pawns
   uint64_t enemy_knights_bitboard = board.get_bitboard(-color * KNIGHT);
   uint64_t enemy_pawns_bitboard = board.get_bitboard(-color * PAWN);
