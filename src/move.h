@@ -58,7 +58,7 @@ public:
                                                   bool captures_only = false);
   static vector<Move> generate_moves_legal(Board &board,
                                            bool captures_only = false);
-  static bool detect_check(const Board &board);
+  static uint64_t detect_check(const Board &board);
 
 private:
   template <int piece>

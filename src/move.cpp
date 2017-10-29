@@ -531,139 +531,39 @@ vector<Move> MoveGenerator::generate_moves_legal(Board &board,
   return all_moves;
 }
 
-bool MoveGenerator::detect_check(const Board &board) {
+uint64_t MoveGenerator::detect_check(const Board &board) {
+  uint64_t check_bb = 0;
   int8_t color = board.get_side_to_move();
   uint64_t king_bitboard = board.get_bitboard(color * KING);
   Square king_sq = board.get_my_king_location();
   Square eking_sq = board.get_enemy_king_location();
-  //   int8_t king_sq_int = 0;
-  // /*while (temp >>= 1)
-  //     {
-  //         king_sq_int++;
-  //     }*/
-  // #ifdef _MSC_VER
-  //   unsigned long idx;
-  //   _BitScanForward64(&idx, king_bitboard);
-  //   king_sq_int = idx;
-  // #else
-  //   king_sq_int = __builtin_ctzll(king_bitboard);
-  // #endif // _MSC_VER
-  //
-  //   Square king_sq = (Square)king_sq_int;
   uint64_t occupied = 0;
   uint64_t enemy_rooks_bitboard = board.get_bitboard(-color * ROOK);
   uint64_t enemy_bishops_bitboard = board.get_bitboard(-color * BISHOP);
   uint64_t enemy_queens_bitboard = board.get_bitboard(-color * QUEEN);
-  // detect orthogonal check (by rooks and/or queens)
-  // const Square *ortho_dirs[4] = { UP, DOWN, RIGHT, LEFT };
-  // for (const Square *direction : ortho_dirs)
-  // {
-  // 	Square current = direction[king_sq];
-  // 	while (current != INVALID)
-  // 	{
-  // 		int8_t piece = board.get_piece(current);
-  // 		if (piece != NONE)
-  // 		{
-  // 			if ((piece == -color * ROOK) || (piece == -color *
-  // QUEEN))
-  // // rook or queen of opposite color
-  // 			{
-  // 				return true;
-  // 			}
-  // 			break;
-  // 		}
-  // 		current = direction[current];
-  // 	}
-  // }
   occupied = ~board.get_bitboard(NONE);
   occupied &= ROOK_MAGIC[king_sq].mask;
   occupied *= ROOK_MAGIC[king_sq].magic;
   occupied >>= (64 - ROOK_BITS[king_sq]);
-  if (ROOK_ATTACKS_TABLE[king_sq][occupied] &
-      (enemy_rooks_bitboard | enemy_queens_bitboard)) {
-    return true;
-  }
-  // detect diagonal check (by bishops and/or queens)
-  // const Square *dia_dirs[4] = {UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT};
-  // for (const Square *direction : dia_dirs)
-  // {
-  // 	Square current = direction[king_sq];
-  // 	while (current != INVALID)
-  // 	{
-  // 		int8_t piece = board.get_piece(current);
-  // 		if (piece != NONE)
-  // 		{
-  // 			if ((piece == -color * BISHOP) || (piece == -color *
-  // QUEEN))
-  // // bishop or queen of opposite color
-  // 			{
-  // 				return true;
-  // 			}
-  // 			break;
-  // 		}
-  // 		current = direction[current];
-  // 	}
-  // }
+  check_bb |= (ROOK_ATTACKS_TABLE[king_sq][occupied] &
+               (enemy_rooks_bitboard | enemy_queens_bitboard));
   occupied = ~board.get_bitboard(NONE);
   occupied &= BISHOP_MAGIC[king_sq].mask;
   occupied *= BISHOP_MAGIC[king_sq].magic;
   occupied >>= (64 - BISHOP_BITS[king_sq]);
-  if (BISHOP_ATTACKS_TABLE[king_sq][occupied] &
-      (enemy_bishops_bitboard | enemy_queens_bitboard)) {
-    return true;
-  }
-  // detect check by enemy king (actually impossible but helps for legality
-  // check)
-  //   int8_t eking_sq_int = 0;
-  // // while (enemy_king_bitboard >>= 1)
-  // //{
-  // //    eking_sq_int++;
-  // //}
-  // #ifdef _MSC_VER
-  //   unsigned long eidx;
-  //   _BitScanForward64(&eidx, enemy_king_bitboard);
-  //   eking_sq_int = eidx;
-  // #else
-  //   eking_sq_int = __builtin_ctzll(enemy_king_bitboard);
-  // #endif // _MSC_VER
-  //   Square eking_sq = (Square)eking_sq_int;
-  if (KING_PATTERNS_TABLE[eking_sq] & king_bitboard) {
-    return true;
-  }
+  check_bb |= (BISHOP_ATTACKS_TABLE[king_sq][occupied] &
+               (enemy_bishops_bitboard | enemy_queens_bitboard));
+  check_bb |= (KING_PATTERNS_TABLE[eking_sq] & king_bitboard);
   // detect check by enemy knights and pawns
   uint64_t enemy_knights_bitboard = board.get_bitboard(-color * KNIGHT);
   uint64_t enemy_pawns_bitboard = board.get_bitboard(-color * PAWN);
-  // for (int i = 0; i < SQUARES_COUNT; i++)
-  //{
-  //    /*if ((enemy_knights_bitboard & (1ULL << i)) &&
-  //    (KNIGHT_PATTERNS_TABLE[i] & king_bitboard))
-  //    {
-  //        return true;
-  //    }*/
-  //    if (enemy_pawns_bitboard & (1ULL << i))
-  //    {
-  //        Square forward = (Square)(i - color);
-  //        Square left_forward = LEFT[forward], right_forward = RIGHT[forward];
-  //        uint64_t lf_bitboard = (left_forward != INVALID) ? (1ULL <<
-  //        left_forward) : 0; uint64_t rf_bitboard = (right_forward != INVALID)
-  //        ? (1ULL << right_forward) : 0; if ((lf_bitboard | rf_bitboard) &
-  //        king_bitboard)
-  //        {
-  //            return true;
-  //        }
-  //    }
-  //}
-  if (enemy_knights_bitboard & KNIGHT_PATTERNS_TABLE[king_sq]) {
-    return true; // knight checks
-  }
+  check_bb |= (enemy_knights_bitboard & KNIGHT_PATTERNS_TABLE[king_sq]);
   Square backward = (Square)(king_sq + color);
   Square left_backward = LEFT[backward], right_backward = RIGHT[backward];
   uint64_t lb_bitboard =
       (left_backward != INVALID) ? (1ULL << left_backward) : 0;
   uint64_t rb_bitboard =
       (right_backward != INVALID) ? (1ULL << right_backward) : 0;
-  if ((lb_bitboard | rb_bitboard) & enemy_pawns_bitboard) {
-    return true; // pawn checks
-  }
-  return false;
+  check_bb |= ((lb_bitboard | rb_bitboard) & enemy_pawns_bitboard);
+  return check_bb;
 }
