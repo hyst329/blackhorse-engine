@@ -397,36 +397,43 @@ void MoveGenerator::generate_moves_single_piece<KING>(const Board &board,
   }
 }
 
-vector<Move> MoveGenerator::generate_moves_pseudo_legal(const Board &board,
-                                                        bool captures_only) {
+vector<Move> MoveGenerator::generate_moves_legal(Board &board,
+                                                 bool captures_only) {
+  int8_t king = board.get_side_to_move() * KING;
+  // Detect check
+  bool checked = detect_check(board);
+  // Generate all moves
   uint64_t pieces = board.combined_bitboard(board.get_side_to_move());
   uint64_t free_squares = board.get_bitboard(NONE);
-  vector<Move> res;
-  res.reserve(256);
+  vector<Move> all_moves;
+  all_moves.reserve(256);
   for (int i = 0; i < SQUARES_COUNT; i++) {
     if (pieces & (1ULL << i)) {
       int8_t piece = board.get_piecename((Square)i);
       switch (piece) {
       case PAWN:
-        generate_moves_single_piece<PAWN>(board, (Square)i, res, captures_only);
+        generate_moves_single_piece<PAWN>(board, (Square)i, all_moves,
+                                          captures_only);
         break;
       case KNIGHT:
-        generate_moves_single_piece<KNIGHT>(board, (Square)i, res,
+        generate_moves_single_piece<KNIGHT>(board, (Square)i, all_moves,
                                             captures_only);
         break;
       case BISHOP:
-        generate_moves_single_piece<BISHOP>(board, (Square)i, res,
+        generate_moves_single_piece<BISHOP>(board, (Square)i, all_moves,
                                             captures_only);
         break;
       case ROOK:
-        generate_moves_single_piece<ROOK>(board, (Square)i, res, captures_only);
+        generate_moves_single_piece<ROOK>(board, (Square)i, all_moves,
+                                          captures_only);
         break;
       case QUEEN:
-        generate_moves_single_piece<QUEEN>(board, (Square)i, res,
+        generate_moves_single_piece<QUEEN>(board, (Square)i, all_moves,
                                            captures_only);
         break;
       case KING:
-        generate_moves_single_piece<KING>(board, (Square)i, res, captures_only);
+        generate_moves_single_piece<KING>(board, (Square)i, all_moves,
+                                          captures_only);
         break;
       }
     }
@@ -441,7 +448,7 @@ vector<Move> MoveGenerator::generate_moves_pseudo_legal(const Board &board,
                           ? 0x0000000001010100
                           : 0x0000000080808000; // squares between king and rook
       if ((free_squares & mask) == mask) {
-        res.emplace_back(Move(king_square, target_square));
+        all_moves.emplace_back(Move(king_square, target_square));
       }
     }
     if (castling & KINGSIDE) {
@@ -452,35 +459,10 @@ vector<Move> MoveGenerator::generate_moves_pseudo_legal(const Board &board,
                           ? 0x0001010000000000
                           : 0x0080800000000000; // squares between king and rook
       if ((free_squares & mask) == mask) {
-        res.emplace_back(Move(king_square, target_square));
+        all_moves.emplace_back(Move(king_square, target_square));
       }
     }
   }
-  return res;
-}
-
-vector<Move> MoveGenerator::generate_moves_legal(Board &board,
-                                                 bool captures_only) {
-  // TODO: Something more effective
-  int8_t king = board.get_side_to_move() * KING;
-  // Detect check
-  // board.switch_sides();
-  // vector<Move> replies = MoveGenerator::generate_moves_pseudo_legal(board);
-  // bool checked = false;
-  // for (Move &reply : replies)
-  // {
-  //     if (reply.get_captured_piece() == king)
-  //     {
-  //         checked = true;
-  //         break;
-  //     }
-  // }
-  // board.switch_sides();
-  bool checked = detect_check(board);
-  // if (checked) cout << "CHECK!!!\n" << board << endl;
-  // Generate all moves
-  vector<Move> all_moves =
-      MoveGenerator::generate_moves_pseudo_legal(board, captures_only);
   bool kingside_through_check = false, queenside_through_check = false;
   for (auto it = all_moves.begin(); it != all_moves.end();) {
     board.make_move(*it);

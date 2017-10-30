@@ -54,8 +54,6 @@ private:
 
 class MoveGenerator {
 public:
-  static vector<Move> generate_moves_pseudo_legal(const Board &board,
-                                                  bool captures_only = false);
   static vector<Move> generate_moves_legal(Board &board,
                                            bool captures_only = false);
   static uint64_t detect_check(const Board &board);
